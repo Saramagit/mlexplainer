@@ -4,7 +4,7 @@
 
 🔗 **Live demo:** [saramagit.github.io/mlexplainer](https://saramagit.github.io/mlexplainer/)
 
-![Visual ML Explainer demo — dragging the applicant across the decision boundary in a k-NN classifier](mlexplainer_demo.gif)
+
 
 ---
 
