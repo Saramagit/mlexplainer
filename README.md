@@ -10,12 +10,12 @@
 
 ## What's inside
 
-Eight interactive explainers, one per method, each with real hyperparameter controls:
+Seven interactive method explainers plus an evaluation toolkit, each with real hyperparameter controls:
 
-| Method | What you'll tune | What you'll see |
+| Lesson | What you'll tune | What you'll see |
 |---|---|---|
 | **Principal Component Analysis** | `n_components`, scaling on/off, `svd_solver` | Scree plot, cumulative variance, 2D projection |
-| **Evaluation Metrics** | Decision threshold, FP cost, FN cost | Score distribution, ROC curve, confusion matrix, cost-optimal threshold |
+| **Evaluation Metrics** (classifier toolkit) | Decision threshold, FP cost, FN cost | Score distribution, ROC curve, confusion matrix, cost-optimal threshold |
 | **Linear Regression** | Method (OLS/Ridge/Lasso), `alpha`, `test_size` | Fit line, residuals, OLS reference, R² gap |
 | **k-Nearest Neighbors** | `n_neighbors`, `metric`, `weights`, scaling | Decision boundary, neighbor links, live prediction |
 | **Naive Bayes** | `alpha` (Laplace smoothing), `fit_prior`, class prior | Word-by-word spam probability, log-likelihood breakdown |
