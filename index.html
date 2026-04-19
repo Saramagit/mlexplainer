@@ -879,8 +879,8 @@
 <section class="about">
   <div class="about-grid">
     <div class="about-lead">
-      <p>Most ML tutorials are walls of math or walls of code. Neither builds intuition. This tool flips that around — you <strong>drag data points, tune the actual scikit-learn hyperparameters, and watch eight foundational ML methods respond in real time</strong>.</p>
-      <p>Every slider is labeled with both the real parameter name (<code>max_depth</code>, <code>alpha</code>, <code>n_neighbors</code>) and a plain-language description of what it does. Every chart updates live. A narrative panel names what's happening — overfitting alert, underfitting, good generalization, L1 feature selection — as you work.</p>
+      <p>Most ML tutorials are walls of math or walls of code. Neither builds intuition. This tool flips that around. You <strong>drag data points, tune the actual scikit-learn hyperparameters, and watch eight foundational ML methods respond in real time</strong>.</p>
+      <p>Every slider is labeled with both the real parameter name (<code>max_depth</code>, <code>alpha</code>, <code>n_neighbors</code>) and a plain-language description of what it does. Every chart updates live. A narrative panel names what's happening as you work, flagging overfitting alerts, underfitting, good generalization, or L1 feature selection.</p>
       <p>Built for anyone who wants to feel how machine learning models actually behave. No Python required, no math prerequisites, no setup. Runs entirely in your browser.</p>
       <div class="about-tags">
         <span class="about-tag good">Free</span>
@@ -3311,7 +3311,7 @@ buildLesson('tree', {
     } else if (gap < 0.04 && testM.acc > 0.82) {
       setNarrative(narrativeEl, {
         label: 'Good generalization',
-        text: `Train and test accuracy are close and both strong. This is the sweet spot — the tree is complex enough to capture the pattern but not so deep it memorizes noise.`,
+        text: `Train and test accuracy are close and both strong. This is the sweet spot. The tree is complex enough to capture the pattern but not so deep it memorizes noise.`,
         tone: 'success'
       });
     } else if (nLeaves > 20) {
@@ -3438,7 +3438,7 @@ buildLesson('logistic', {
   `,
   explanation: `
     <p>Logistic regression fits a decision boundary by maximizing the likelihood of the training labels under a sigmoid model. The hyperparameters above mirror <code>sklearn.linear_model.LogisticRegression</code>.</p>
-    <p><strong>C</strong> controls regularization. Smaller C shrinks the coefficients, giving you a simpler, more stable model at the cost of some training accuracy. Larger C lets coefficients grow and fit the training set more tightly — but risk overfitting. <strong>class_weight='balanced'</strong> reweights the loss so a minority class isn't ignored. <strong>penalty='l1'</strong> can zero out coefficients entirely, useful when you want the model to select features.</p>
+    <p><strong>C</strong> controls regularization. Smaller C shrinks the coefficients, giving you a simpler, more stable model at the cost of some training accuracy. Larger C lets coefficients grow and fit the training set more tightly, but risks overfitting. <strong>class_weight='balanced'</strong> reweights the loss so a minority class isn't ignored. <strong>penalty='l1'</strong> can zero out coefficients entirely, useful when you want the model to select features.</p>
     <div class="callout">The most important business output is not the prediction. It is the odds ratio. "Customers on month-to-month contracts have 3.4× higher odds of churning than annual customers." That sentence is the deliverable.</div>
     <p>Drag the <strong>threshold</strong> slider and notice: accuracy may barely move, but precision and recall swap in huge chunks. That's the real decision, not the model fit. In fraud detection you'd set a low threshold (catch more, tolerate false alarms). In spam filtering you'd set it high (never drop real email).</p>
   `,
@@ -3687,7 +3687,7 @@ buildLesson('logistic', {
     } else if (threshold < 0.3 && m.rec > 0.85 && m.prec < 0.55) {
       setNarrative(narrativeEl, {
         label: 'Recall-optimized',
-        text: `Low threshold catches ${(m.rec*100).toFixed(0)}% of true positives but only ${(m.prec*100).toFixed(0)}% of your predictions are right. Good for cancer screening, fraud — bad for spam filtering.`,
+        text: `Low threshold catches ${(m.rec*100).toFixed(0)}% of true positives but only ${(m.prec*100).toFixed(0)}% of your predictions are right. Good for cancer screening or fraud, bad for spam filtering.`,
         tone: 'default'
       });
     } else if (threshold > 0.7 && m.prec > 0.85 && m.rec < 0.55) {
