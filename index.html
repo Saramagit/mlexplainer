@@ -1,6 +1,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Visual ML Explainer</title>
+<meta name="description" content="Interactive visualizations for learning classical machine learning methods. Drag data, tune hyperparameters, see models change in real time.">
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%23102a56'/><circle cx='20' cy='22' r='6' fill='%23ff6b1a'/><circle cx='44' cy='22' r='6' fill='%231fa85a'/><circle cx='32' cy='44' r='6' fill='%233a7bff'/><path d='M20 22 L32 44 L44 22' stroke='white' stroke-width='2' fill='none' opacity='0.8'/></svg>">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -143,13 +146,6 @@
     color: #ffffff;
     border-color: var(--blue-mid);
     box-shadow: 0 3px 10px rgba(37,87,199,0.35);
-  }
-  nav.methods button.active .week { color: var(--orange-soft); opacity: 1; }
-  nav.methods .week {
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    margin-right: 0.35rem;
-    opacity: 0.6;
   }
 
   /* ---------- MAIN ---------- */
@@ -771,8 +767,8 @@
 <main id="main"></main>
 
 <footer>
-  <div>Course study aid · Not a textbook replacement</div>
-  <div>Interactive visualizations for classical ML methods</div>
+  <div>Built by Sarama Shehmir · Interactive visualizations for classical ML</div>
+  <div>Open source · MIT licensed · Not a textbook replacement</div>
 </footer>
 
 <script>
@@ -802,7 +798,7 @@ const nav = document.getElementById('nav');
 NAV_ORDER.forEach((id, i) => {
   const l = LESSONS.find(x => x.id === id);
   const btn = document.createElement('button');
-  btn.innerHTML = `<span class="week">WK ${l.week}</span>${l.short}`;
+  btn.innerHTML = l.short;
   btn.dataset.id = id;
   if (i === 0) btn.classList.add('active');
   btn.onclick = () => switchLesson(id);
@@ -1042,7 +1038,7 @@ function buildLesson(id, config) {
   const el = document.getElementById('lesson-' + id);
   el.innerHTML = `
     <div class="lesson-header">
-      <div class="eyebrow">WEEK ${config.week} <span class="divider">·</span> ${config.chapter}</div>
+      <div class="eyebrow">${config.chapter}</div>
       <h2>${config.title}</h2>
       <p class="tagline">${config.tagline}</p>
     </div>
@@ -1120,7 +1116,7 @@ function makeDraggable(el, svg, onMove) {
 // ============================================================
 buildLesson('pca', {
   week: 4,
-  chapter: 'Chapter 4 — Dimension Reduction',
+  chapter: 'Dimension Reduction · Unsupervised Learning',
   title: 'Principal Component <em>Analysis</em>',
   tagline: 'A 5-feature dataset with tunable correlation and noise. Adjust n_components and scaling the way you would in scikit-learn, then read the scree plot and cumulative explained variance to decide how many components to keep.',
   hint: 'TUNE n_components · TOGGLE SCALING · READ THE SCREE PLOT',
@@ -1470,7 +1466,7 @@ buildLesson('pca', {
 // ============================================================
 buildLesson('evaluation', {
   week: 5,
-  chapter: 'Chapter 5 — Evaluating Predictive Performance',
+  chapter: 'Model Evaluation · Classification Metrics',
   title: 'Confusion Matrix, Precision, <em>Recall</em>',
   tagline: 'A classifier score-line, a ROC curve, and cost-sensitive evaluation. Move the threshold, set the business cost of false positives vs false negatives, and watch the optimal threshold shift.',
   hint: 'DRAG THE THRESHOLD · SET BUSINESS COSTS · WATCH OPTIMAL POINT MOVE',
@@ -1833,7 +1829,7 @@ buildLesson('evaluation', {
 // ============================================================
 buildLesson('regression', {
   week: 6,
-  chapter: 'Chapter 6 — Multiple Linear Regression',
+  chapter: 'Supervised Learning · Regression',
   title: 'Linear <em>Regression</em>',
   tagline: 'Drag any point to reshape the data. Then switch between OLS, Ridge, and Lasso (the three flavors of linear regression scikit-learn offers) and see exactly how regularization changes the fit, especially when outliers or multicollinearity enter the picture.',
   hint: 'DRAG POINTS · SWITCH REGULARIZATION · WATCH THE LINE CHANGE',
@@ -2204,19 +2200,40 @@ buildLesson('regression', {
 // ============================================================
 buildLesson('knn', {
   week: 8,
-  chapter: 'Chapter 7 — k-Nearest Neighbors',
+  chapter: 'Supervised Learning · Classification',
   title: 'k-Nearest <em>Neighbors</em>',
-  tagline: 'Move the orange query point and adjust the real scikit-learn hyperparameters. See the decision boundary change with k, distance metric, and weighting, and watch what happens when you turn off feature scaling.',
-  hint: 'DRAG THE QUERY · TUNE n_neighbors · TRY TOGGLING SCALING',
+  tagline: 'A loan-approval classifier. Drag the orange query point (a new applicant), tune scikit-learn hyperparameters, and watch the decision boundary change with k, distance metric, and whether you scale the features.',
+  hint: 'DRAG THE APPLICANT · TUNE n_neighbors · TRY TOGGLING SCALING',
   vizHTML: `
-    <svg class="canvas" viewBox="0 0 600 420" id="knn-svg">
+    <svg class="canvas" viewBox="0 0 600 440" id="knn-svg">
+      <!-- Legend strip along the top -->
+      <g id="knn-legend">
+        <circle cx="70" cy="16" r="4.5" fill="#1fa85a" opacity="0.9"/>
+        <text x="80" y="20" font-family="IBM Plex Mono" font-size="10" fill="#102a56">APPROVED (train)</text>
+
+        <circle cx="200" cy="16" r="5.5" fill="none" stroke="#1fa85a" stroke-width="2"/>
+        <text x="212" y="20" font-family="IBM Plex Mono" font-size="10" fill="#102a56">APPROVED (test)</text>
+
+        <circle cx="325" cy="16" r="4.5" fill="#2557c7" opacity="0.9"/>
+        <text x="335" y="20" font-family="IBM Plex Mono" font-size="10" fill="#102a56">DECLINED (train)</text>
+
+        <circle cx="452" cy="16" r="5.5" fill="none" stroke="#2557c7" stroke-width="2"/>
+        <text x="464" y="20" font-family="IBM Plex Mono" font-size="10" fill="#102a56">DECLINED (test)</text>
+
+        <circle cx="555" cy="16" r="5" fill="#ff6b1a" stroke="#fff" stroke-width="1.5"/>
+        <text x="555" y="36" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" fill="#ff6b1a">applicant</text>
+      </g>
+
+      <!-- Plot region -->
       <g id="knn-boundary"></g>
       <g id="knn-links"></g>
       <g id="knn-train"></g>
       <g id="knn-test"></g>
-      <circle id="knn-query" cx="300" cy="210" r="14" fill="#ff6b1a" stroke="#ffffff" stroke-width="3" class="pt"/>
-      <text x="545" y="375" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae">feature 1 →</text>
-      <text x="50" y="35" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae">feature 2 ↑</text>
+      <circle id="knn-query" cx="300" cy="220" r="14" fill="#ff6b1a" stroke="#ffffff" stroke-width="3" class="pt"/>
+
+      <!-- Axis labels, kept inside the plot area to avoid clipping -->
+      <text x="75" y="415" font-family="IBM Plex Mono" font-size="11" fill="#6d82ae" font-weight="600">annual income →</text>
+      <text x="75" y="50" font-family="IBM Plex Mono" font-size="11" fill="#6d82ae" font-weight="600">↑ debt-to-income ratio</text>
     </svg>
     <div class="controls">
       <div class="param-group">
@@ -2247,7 +2264,7 @@ buildLesson('knn', {
           </div>
           ${segToggle({ id: 'knn-scale', options: [{value:'on', label:'On'}, {value:'off', label:'Off'}], value: 'on' })}
         </div>
-        ${paramRow({ skName: 'feature_ratio', plain: 'Feature 1 scale vs feature 2', id: 'knn-ratio', min: 1, max: 10, step: 0.5, value: 1, fmt: v => (+v).toFixed(1) + '×' })}
+        ${paramRow({ skName: 'income_scale', plain: 'Income magnitude vs DTI magnitude', id: 'knn-ratio', min: 1, max: 10, step: 0.5, value: 1, fmt: v => (+v).toFixed(1) + '×' })}
       </div>
 
       <div class="param-group">
@@ -2273,15 +2290,15 @@ buildLesson('knn', {
       </div>
 
       <div style="font-family: var(--mono); font-size: 0.72rem; color: var(--ink-soft); background: var(--bg-panel); border: 1px solid var(--rule); padding: 0.55rem 0.7rem; border-radius: 4px; margin-top: 0.5rem;">
-        <strong>Query point prediction:</strong> <span id="knn-pred" style="color: var(--accent);">—</span>
+        <strong>Decision for this applicant:</strong> <span id="knn-pred" style="color: var(--accent);">—</span>
       </div>
     </div>
   `,
   explanation: `
-    <p>k-NN is the laziest learner in ML: it does not build a model at all. To predict a new case, it finds the <em>n_neighbors</em> most similar training cases and takes a vote. The hyperparameters above match <code>sklearn.neighbors.KNeighborsClassifier</code>.</p>
+    <p>k-NN is the laziest learner in ML: it does not build a model at all. To score a new loan applicant, it finds the <em>n_neighbors</em> most similar past applicants and takes a vote. The hyperparameters above match <code>sklearn.neighbors.KNeighborsClassifier</code>.</p>
     <p><strong>n_neighbors</strong> is the bias-variance knob. With k=1 you get a jagged, overfitted boundary. With k=25 you get a smooth underfit. <strong>weights='distance'</strong> gives closer neighbors a stronger vote. <strong>metric</strong> changes how you measure "nearby". Manhattan treats diagonal movement as two separate steps, while Chebyshev only cares about the largest single-axis difference.</p>
-    <div class="callout">Try this: turn scaling Off and set feature_ratio to 10×. One feature now completely dominates the distance calculation, and k-NN silently collapses to a 1D classifier. This is the most common k-NN bug in production, and you can see it live here.</div>
-    <p>For a Realtor: "Here are the 5 most similar recent sales, and that is my price estimate." This is still how Zillow and Redfin generate their comp-based portions.</p>
+    <div class="callout">Try this: turn scaling Off and set income_scale to 10×. Annual income now has a range in the tens of thousands while DTI is a ratio between 0 and 1, so income completely dominates the distance calculation, and k-NN silently collapses to a 1D classifier on income alone. This is the most common k-NN bug in production, and you can see it live here.</div>
+    <p>In the real world this is how a lender might score a new applicant: find the 5 most similar past applicants by income and DTI, and predict based on what happened to them. Same technique works for home valuations (Zillow's comps), product recommendations, and new-case medical triage.</p>
   `,
   uses: [
     { domain: 'Recommender systems', example: '"Customers like you also bought…" is literally k-NN on purchase vectors.' },
@@ -2333,15 +2350,18 @@ buildLesson('knn', {
       return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
     };
     allPts = [];
+    // APPROVED applicants (cls 'A'): high income, low DTI → lower-right of plot
+    // (higher y values = lower on screen = lower DTI with our "↑ debt-to-income ratio" convention)
     for (let i = 0; i < 28; i++) {
-      allPts.push({ x: 200 + gauss() * 50, y: 170 + gauss() * 55, cls: 'A' });
+      allPts.push({ x: 400 + gauss() * 50, y: 280 + gauss() * 45, cls: 'A' });
     }
+    // DECLINED applicants (cls 'B'): lower income, higher DTI → upper-left of plot
     for (let i = 0; i < 28; i++) {
-      allPts.push({ x: 400 + gauss() * 50, y: 250 + gauss() * 55, cls: 'B' });
+      allPts.push({ x: 200 + gauss() * 50, y: 160 + gauss() * 45, cls: 'B' });
     }
     allPts.forEach(p => {
       p.x = Math.max(75, Math.min(525, p.x));
-      p.y = Math.max(55, Math.min(345, p.y));
+      p.y = Math.max(60, Math.min(390, p.y));
     });
   }
 
@@ -2354,15 +2374,15 @@ buildLesson('knn', {
   }
 
   // Scaled coordinates for distance calculation
-  // When scaling off + feature_ratio high, feature 1 dominates
+  // When scaling off + feature_ratio high, income (x-axis) dominates
   function scaledCoords(pt) {
     const ratio = parseFloat(ratioSl.value);
     if (scaling === 'on') {
       // Standardize both features to roughly unit scale
-      return { x: (pt.x - 300) / 100, y: (pt.y - 210) / 80 };
+      return { x: (pt.x - 300) / 100, y: (pt.y - 220) / 80 };
     } else {
-      // Leave features on their raw scale, and stretch feature 1 by the ratio
-      return { x: (pt.x - 300) * ratio, y: (pt.y - 210) };
+      // Leave features on their raw scale, and stretch income by the ratio
+      return { x: (pt.x - 300) * ratio, y: (pt.y - 220) };
     }
   }
 
@@ -2413,7 +2433,7 @@ buildLesson('knn', {
     // Decision boundary grid — only against TRAIN set
     const grid = [];
     for (let gx = 20; gx < 580; gx += 20) {
-      for (let gy = 20; gy < 400; gy += 20) {
+      for (let gy = 40; gy < 405; gy += 20) {
         const res = predict({ x: gx, y: gy }, train);
         const col = res.cls === 'A' ? '#1fa85a' : '#2557c7';
         const margin = weights === 'uniform'
@@ -2435,7 +2455,8 @@ buildLesson('knn', {
 
     // Query prediction + links to its k neighbors
     const queryResult = predict({ x: qx, y: qy }, train);
-    predEl.textContent = `Class ${queryResult.cls}  (${queryResult.vA} vs ${queryResult.vB})`;
+    const label = queryResult.cls === 'A' ? 'APPROVED' : 'DECLINED';
+    predEl.textContent = `${label}  (${queryResult.vA} vs ${queryResult.vB})`;
     predEl.style.color = queryResult.cls === 'A' ? '#1fa85a' : '#2557c7';
     linksG.innerHTML = queryResult.ranked.map(p =>
       `<line x1="${qx}" y1="${qy}" x2="${p.x}" y2="${p.y}"
@@ -2468,7 +2489,7 @@ buildLesson('knn', {
     if (scaling === 'off' && parseFloat(ratioSl.value) > 3) {
       setNarrative(narrativeEl, {
         label: 'Scaling warning',
-        text: `Feature 1 scale is ${parseFloat(ratioSl.value).toFixed(1)}× feature 2, but scaling is off. k-NN is silently using feature 1 almost exclusively, making the boundary essentially vertical. This is the #1 production bug in k-NN.`,
+        text: `Income magnitude is ${parseFloat(ratioSl.value).toFixed(1)}× the DTI magnitude, but scaling is off. k-NN is silently using income almost exclusively, making the decision boundary essentially vertical. Annual income ranges in the tens of thousands while DTI is a ratio between 0 and 1. This mismatch is the #1 production bug in k-NN.`,
         tone: 'alert'
       });
     } else if (k === 1 && gap > 0.08) {
@@ -2543,7 +2564,7 @@ buildLesson('knn', {
 
   generate();
   resplit();
-  render(300, 210);
+  render(300, 220);
 })();
 
 // ============================================================
@@ -2551,7 +2572,7 @@ buildLesson('knn', {
 // ============================================================
 buildLesson('nb', {
   week: 9,
-  chapter: 'Chapter 8 — Naive Bayes Classifier',
+  chapter: 'Probabilistic Classification · Text',
   title: 'Naive <em>Bayes</em>',
   tagline: 'A tiny spam filter. Click words to build an email and see how Bayes rule computes the spam probability. Then tune the real scikit-learn hyperparameters, especially alpha, the Laplace smoothing knob that fixes the famous zero-probability bug.',
   hint: 'CLICK WORDS · TUNE alpha · TRY A WORD THAT HAS NEVER APPEARED IN SPAM',
@@ -2876,7 +2897,7 @@ buildLesson('nb', {
 
 buildLesson('tree', {
   week: 10,
-  chapter: 'Chapter 9 — Classification and Regression Trees',
+  chapter: 'Tree-Based Methods · Interpretable Classification',
   title: 'Decision <em>Trees</em>',
   tagline: 'A loan approval classifier. Tune the real hyperparameters scikit-learn exposes and watch the tree change, then compare train accuracy against test accuracy to catch overfitting as it happens.',
   hint: 'TUNE HYPERPARAMETERS · WATCH OVERFITTING IN REAL TIME',
@@ -3205,7 +3226,7 @@ buildLesson('tree', {
 // ============================================================
 buildLesson('logistic', {
   week: 11,
-  chapter: 'Chapter 10 — Logistic Regression',
+  chapter: 'Linear Classification · Probability Models',
   title: 'Logistic <em>Regression</em>',
   tagline: 'A churn classifier with two features. Tune regularization strength, class weights, and the decision threshold the way scikit-learn exposes them. Watch how each control trades off precision, recall, and model complexity.',
   hint: 'TUNE REGULARIZATION · SHIFT THE THRESHOLD · SEE METRICS MOVE',
@@ -3582,7 +3603,7 @@ buildLesson('logistic', {
 // ============================================================
 buildLesson('lda', {
   week: 12,
-  chapter: 'Chapter 12 — Discriminant Analysis',
+  chapter: 'Gaussian Classification · LDA and QDA',
   title: 'Linear Discriminant <em>Analysis</em>',
   tagline: 'LDA assumes each class is a Gaussian blob. Tune the real scikit-learn hyperparameters (shrinkage, class priors, LDA-vs-QDA) and drag the class centers to see the decision boundary respond.',
   hint: 'TOGGLE LDA/QDA · TUNE SHRINKAGE · DRAG THE CENTERS',
