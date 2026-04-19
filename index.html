@@ -1,0 +1,3996 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visual ML Explainer</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    /* Base: bright white + energetic blue */
+    --bg: #ffffff;
+    --bg-panel: #eff5ff;
+    --ink: #102a56;
+    --ink-soft: #2d4a84;
+    --ink-mute: #6d82ae;
+    --rule: #c8d8ec;
+
+    /* Primary blue family — brighter, more saturated */
+    --blue: #102a56;
+    --blue-mid: #2557c7;
+    --blue-bright: #3a7bff;
+    --blue-soft: #dae7ff;
+
+    /* Orange — brighter, more coral */
+    --orange: #ff6b1a;
+    --orange-soft: #ffd9bf;
+
+    /* Green — fresher, lime-leaning */
+    --green: #1fa85a;
+    --green-soft: #b9ebc9;
+
+    /* Semantic */
+    --accent: var(--orange);
+    --accent-soft: var(--orange-soft);
+    --good: var(--green);
+    --bad: #e63946;
+    --highlight: var(--orange-soft);
+
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+    --pad: 1rem;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html { -webkit-text-size-adjust: 100%; }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-image:
+      radial-gradient(ellipse at 10% 0%, rgba(58,123,255,0.09) 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 100%, rgba(255,107,26,0.07) 0%, transparent 55%);
+  }
+
+  /* ---------- HEADER ---------- */
+  header {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 1.5rem var(--pad) 1rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (min-width: 768px) {
+    header { padding: 2.5rem 2rem 1rem; }
+    :root { --pad: 2rem; }
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 0.5rem;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.6rem, 6vw, 2.8rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .subtitle {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(0.95rem, 3vw, 1.1rem);
+    color: var(--ink-soft);
+    margin-top: 0.5rem;
+    max-width: 600px;
+  }
+
+  /* ---------- NAV ---------- */
+  nav.methods {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 0.8rem var(--pad);
+    display: flex;
+    gap: 0.4rem;
+    border-bottom: 1px solid var(--rule);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 50;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  nav.methods::-webkit-scrollbar { display: none; }
+  @media (min-width: 768px) {
+    nav.methods { flex-wrap: wrap; overflow: visible; padding: 1.25rem 2rem; gap: 0.5rem; }
+  }
+  nav.methods button {
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 0.55rem 0.9rem;
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 20px;
+    cursor: pointer;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-height: 40px;
+  }
+  nav.methods button.active {
+    background: var(--blue-mid);
+    color: #ffffff;
+    border-color: var(--blue-mid);
+    box-shadow: 0 3px 10px rgba(37,87,199,0.35);
+  }
+  nav.methods button.active .week { color: var(--orange-soft); opacity: 1; }
+  nav.methods .week {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    margin-right: 0.35rem;
+    opacity: 0.6;
+  }
+
+  /* ---------- MAIN ---------- */
+  main {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 1.25rem var(--pad);
+  }
+  @media (min-width: 768px) {
+    main { padding: 2rem; }
+  }
+  .lesson { display: none; }
+  .lesson.active { display: block; }
+
+  .lesson-header { margin-bottom: 1.25rem; }
+  .lesson-header .eyebrow span.divider { margin: 0 0.4rem; color: var(--rule); }
+  .lesson-header h2 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.4rem, 5vw, 2.2rem);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin-top: 0.3rem;
+  }
+  .lesson-header h2 em { font-style: italic; color: var(--accent); }
+  .lesson-header .tagline {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--ink-soft);
+    margin-top: 0.5rem;
+    font-size: clamp(0.95rem, 3vw, 1.05rem);
+    max-width: 700px;
+  }
+
+  /* ---------- LAYOUT ---------- */
+  .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  @media (min-width: 900px) {
+    .grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+  }
+
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1rem;
+  }
+  @media (min-width: 768px) {
+    .panel { padding: 1.5rem; }
+  }
+  .panel h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 1.05rem;
+    margin-bottom: 0.7rem;
+    letter-spacing: -0.01em;
+  }
+  .panel p {
+    color: var(--ink-soft);
+    margin-bottom: 0.7rem;
+    font-size: 0.95rem;
+  }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel ul {
+    list-style: disc;
+    padding-left: 1.2rem;
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+    margin: 0.5rem 0 0.8rem;
+  }
+
+  .panel.viz { padding: 0.75rem; }
+  .panel.viz .viz-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0 0.25rem;
+    flex-wrap: wrap;
+  }
+  .panel.viz .viz-header h3 { margin-bottom: 0; }
+  .viz-hint {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--ink-mute);
+    letter-spacing: 0.04em;
+  }
+
+  svg.canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: #eff5ff;
+    border-radius: 2px;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* ---------- CONTROLS ---------- */
+  .controls {
+    padding: 0.8rem 0.25rem 0.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+  }
+  .control-row label {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    flex-shrink: 0;
+    min-width: 90px;
+  }
+  @media (min-width: 480px) {
+    .control-row label { min-width: 120px; }
+  }
+  .control-row .value {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--accent);
+    font-weight: 500;
+    margin-left: auto;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  input[type="range"] {
+    flex: 1;
+    min-width: 100px;
+    accent-color: var(--accent);
+    height: 28px;
+    -webkit-appearance: none;
+    background: transparent;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    background: var(--rule);
+    border-radius: 2px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 22px; width: 22px;
+    margin-top: -9px;
+    background: var(--accent);
+    border-radius: 50%;
+    border: 2px solid var(--bg-panel);
+  }
+  button.btn {
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.55rem 1rem;
+    border: 1px solid var(--blue-mid);
+    background: var(--blue-mid);
+    color: #ffffff;
+    border-radius: 2px;
+    cursor: pointer;
+    min-height: 40px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  button.btn:hover { background: var(--orange); border-color: var(--orange); }
+  button.btn.ghost { background: transparent; color: var(--blue-mid); }
+  button.btn.ghost:hover { background: var(--blue-mid); color: #ffffff; }
+
+  /* ---------- WINS / FAILS ---------- */
+  .two-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-top: 1.25rem;
+  }
+  @media (min-width: 640px) {
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+  }
+  .wins, .fails {
+    padding: 1rem 1.1rem;
+    border-radius: 4px;
+    border-left: 3px solid;
+  }
+  .wins {
+    background: rgba(31,168,90,0.10);
+    border-color: var(--good);
+  }
+  .fails {
+    background: rgba(230,57,70,0.09);
+    border-color: var(--bad);
+  }
+  .wins h4, .fails h4 {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.55rem;
+  }
+  .wins h4 { color: var(--good); }
+  .fails h4 { color: var(--bad); }
+  .wins ul, .fails ul {
+    list-style: none;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    padding-left: 0;
+  }
+  .wins li, .fails li {
+    padding-left: 1.2rem;
+    position: relative;
+    margin-bottom: 0.4rem;
+    line-height: 1.4;
+  }
+  .wins li::before {
+    content: "✓";
+    position: absolute; left: 0;
+    color: var(--good); font-weight: 700;
+  }
+  .fails li::before {
+    content: "✗";
+    position: absolute; left: 0;
+    color: var(--bad); font-weight: 700;
+  }
+
+  /* ---------- BUSINESS USES ---------- */
+  .uses {
+    margin-top: 1.25rem;
+    padding: 1rem 1.2rem;
+    background: rgba(37,87,199,0.09);
+    border-left: 3px solid var(--blue-mid);
+    border-radius: 4px;
+  }
+  .uses h4 {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: 0.7rem;
+  }
+  .uses .use-item {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    color: var(--ink-soft);
+    line-height: 1.45;
+  }
+  .uses .use-item strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* ---------- METRICS DISPLAY ---------- */
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.4rem;
+    margin-top: 0.7rem;
+  }
+  @media (max-width: 380px) {
+    .metric-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .metric-box {
+    background: #eff5ff;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0.5rem 0.6rem;
+  }
+  .metric-box .metric-label {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 0.15rem;
+  }
+  .metric-box .metric-value {
+    font-family: var(--serif);
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .metric-box.highlight {
+    background: rgba(255,107,26,0.11);
+    border-color: var(--accent-soft);
+  }
+
+  /* ---------- CALLOUT ---------- */
+  .callout {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.98rem;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    padding: 0.7rem 0.9rem;
+    border-left: 3px solid var(--orange);
+    margin: 0.9rem 0;
+    background: rgba(255,107,26,0.08);
+  }
+
+  /* ============================================================
+     PLAYGROUND COMPONENTS — hyperparameter tuning UI
+     ============================================================ */
+
+  /* Parameter groups inside controls */
+  .param-group {
+    padding: 0.7rem 0.8rem;
+    background: var(--bg-panel);
+    border-radius: 6px;
+    border: 1px solid var(--rule);
+    margin-bottom: 0.55rem;
+  }
+  .param-group h5 {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--blue-mid);
+    margin-bottom: 0.45rem;
+    font-weight: 600;
+  }
+  .param-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .param-row:last-child { margin-bottom: 0; }
+  .param-row .param-label {
+    flex: 0 0 auto;
+    min-width: 140px;
+  }
+  .param-row .param-label .sk {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--blue-mid);
+    font-weight: 600;
+  }
+  .param-row .param-label .plain {
+    display: block;
+    font-family: var(--sans);
+    font-size: 0.7rem;
+    color: var(--ink-mute);
+    margin-top: 1px;
+    line-height: 1.2;
+  }
+  .param-row input[type="range"] {
+    flex: 1;
+    min-width: 80px;
+  }
+  .param-row .param-value {
+    flex: 0 0 auto;
+    min-width: 48px;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--accent);
+    font-weight: 600;
+    text-align: right;
+  }
+
+  /* Segmented toggle (for criterion/metric/kernel choices) */
+  .seg-toggle {
+    display: inline-flex;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .seg-toggle button {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    padding: 0.35rem 0.65rem;
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--rule);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .seg-toggle button:last-child { border-right: none; }
+  .seg-toggle button:hover { background: var(--blue-soft); }
+  .seg-toggle button.active {
+    background: var(--blue-mid);
+    color: white;
+    font-weight: 600;
+  }
+
+  /* Live metrics dashboard */
+  .metrics-dash {
+    margin-top: 0.8rem;
+    padding: 0.8rem;
+    background: linear-gradient(135deg, rgba(37,87,199,0.06), rgba(255,107,26,0.04));
+    border-radius: 6px;
+    border: 1px solid var(--rule);
+  }
+  .metrics-dash h5 {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: 0.55rem;
+    font-weight: 600;
+  }
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 0.4rem;
+  }
+  .metric-tile {
+    padding: 0.4rem 0.5rem;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid var(--rule);
+    text-align: center;
+  }
+  .metric-tile .m-label {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 2px;
+  }
+  .metric-tile .m-value {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .metric-tile.highlight {
+    border-color: var(--accent);
+    background: rgba(255,107,26,0.08);
+  }
+  .metric-tile.warn { border-color: var(--bad); background: rgba(230,57,70,0.06); }
+  .metric-tile.warn .m-value { color: var(--bad); }
+  .metric-tile.good { border-color: var(--good); background: rgba(31,168,90,0.06); }
+  .metric-tile.good .m-value { color: var(--good); }
+
+  /* Before/after comparison */
+  .compare-panel {
+    margin-top: 0.7rem;
+    padding: 0.6rem 0.8rem;
+    background: rgba(37,87,199,0.05);
+    border-left: 3px solid var(--blue-mid);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    display: none;
+  }
+  .compare-panel.show { display: block; }
+  .compare-panel .cmp-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    margin: 2px 0;
+  }
+  .compare-panel .cmp-row .delta-up { color: var(--good); font-weight: 600; }
+  .compare-panel .cmp-row .delta-down { color: var(--bad); font-weight: 600; }
+  .compare-panel .cmp-row .delta-flat { color: var(--ink-mute); }
+
+  /* Live narrative box */
+  .narrative-box {
+    margin-top: 0.6rem;
+    padding: 0.65rem 0.8rem;
+    background: rgba(255,107,26,0.06);
+    border-left: 3px solid var(--orange);
+    border-radius: 4px;
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--ink);
+    min-height: 2.2rem;
+    transition: background 0.2s;
+  }
+  .narrative-box .nar-label {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--orange);
+    display: block;
+    margin-bottom: 3px;
+    font-weight: 600;
+  }
+  .narrative-box.alert { background: rgba(230,57,70,0.07); border-left-color: var(--bad); }
+  .narrative-box.alert .nar-label { color: var(--bad); }
+  .narrative-box.success { background: rgba(31,168,90,0.07); border-left-color: var(--good); }
+  .narrative-box.success .nar-label { color: var(--good); }
+
+  /* Train/test split strip */
+  .split-strip {
+    margin-top: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+  }
+  .split-bar {
+    flex: 1;
+    height: 14px;
+    background: var(--blue-soft);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+  }
+  .split-bar .train-seg {
+    background: var(--blue-mid);
+    height: 100%;
+  }
+  .split-bar .test-seg {
+    background: var(--orange);
+    height: 100%;
+  }
+  .split-strip .split-legend {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.62rem;
+    color: var(--ink-mute);
+  }
+  .split-strip .split-legend .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 3px;
+    vertical-align: middle;
+  }
+
+  /* Reset / action button row */
+  .action-row {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+  .action-row .btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+  }
+
+  footer {
+    max-width: 1320px;
+    margin: 2rem auto 0;
+    padding: 1.5rem var(--pad);
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  /* SVG data points */
+  .pt { cursor: grab; touch-action: none; }
+  .pt:active { cursor: grabbing; }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--ink-soft);
+    padding: 0 0.25rem;
+    margin-top: 0.3rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+  .legend-swatch {
+    width: 11px; height: 11px; border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.1);
+  }
+
+  .small-note {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    color: var(--ink-mute);
+    letter-spacing: 0.04em;
+    margin-top: 0.3rem;
+    line-height: 1.4;
+  }
+</style>
+
+<header>
+  <div class="eyebrow">Machine Learning and Programming</div>
+  <h1>The Visual <em>Machine Learning</em> Explainer</h1>
+  <p class="subtitle">Drag the data. Move the sliders. Watch the models change. Understand <em>why</em> each method makes the decisions it makes, before you touch a line of Python.</p>
+</header>
+
+<nav class="methods" id="nav"></nav>
+
+<main id="main"></main>
+
+<footer>
+  <div>Course study aid · Not a textbook replacement</div>
+  <div>Interactive visualizations for classical ML methods</div>
+</footer>
+
+<script>
+// ============================================================
+// Visual ML Explainer
+// Interactive: drag points, move sliders, see models update
+// ============================================================
+
+const LESSONS = [
+  { id: 'regression', week: 6, short: 'Linear Regression' },
+  { id: 'evaluation', week: 5, short: 'Evaluation Metrics' },
+  { id: 'pca',        week: 4, short: 'PCA' },
+  { id: 'knn',        week: 8, short: 'k-NN' },
+  { id: 'nb',         week: 9, short: 'Naive Bayes' },
+  { id: 'tree',       week: 10, short: 'Decision Trees' },
+  { id: 'logistic',   week: 11, short: 'Logistic Regression' },
+  { id: 'lda',        week: 12, short: 'LDA' }
+];
+
+// Reorder nav to match course weeks
+const NAV_ORDER = ['pca', 'evaluation', 'regression', 'knn', 'nb', 'tree', 'logistic', 'lda'];
+
+// ============================================================
+// Build navigation
+// ============================================================
+const nav = document.getElementById('nav');
+NAV_ORDER.forEach((id, i) => {
+  const l = LESSONS.find(x => x.id === id);
+  const btn = document.createElement('button');
+  btn.innerHTML = `<span class="week">WK ${l.week}</span>${l.short}`;
+  btn.dataset.id = id;
+  if (i === 0) btn.classList.add('active');
+  btn.onclick = () => switchLesson(id);
+  nav.appendChild(btn);
+});
+
+function switchLesson(id) {
+  document.querySelectorAll('nav.methods button').forEach(b => {
+    b.classList.toggle('active', b.dataset.id === id);
+  });
+  document.querySelectorAll('.lesson').forEach(l => {
+    l.classList.toggle('active', l.dataset.id === id);
+  });
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+// ============================================================
+// PLAYGROUND HELPERS — shared across all lessons
+// ============================================================
+
+// Fisher-Yates shuffle (for train/test split)
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Stratified-ish split of labeled data into train/test
+function trainTestSplit(data, testFrac = 0.3, seed = 42) {
+  // Simple deterministic shuffle based on seed
+  const indexed = data.map((d, i) => ({ ...d, _i: i }));
+  // Interleave by shuffling
+  const shuffled = shuffle(indexed);
+  const cut = Math.floor(shuffled.length * (1 - testFrac));
+  return {
+    train: shuffled.slice(0, cut),
+    test: shuffled.slice(cut)
+  };
+}
+
+// Classification metrics — binary
+function classMetrics(preds, truth, posLabel = 1) {
+  let tp = 0, fp = 0, tn = 0, fn = 0;
+  for (let i = 0; i < preds.length; i++) {
+    const p = preds[i] === posLabel, t = truth[i] === posLabel;
+    if (p && t) tp++;
+    else if (p && !t) fp++;
+    else if (!p && !t) tn++;
+    else if (!p && t) fn++;
+  }
+  const total = tp + fp + tn + fn;
+  const acc = total === 0 ? 0 : (tp + tn) / total;
+  const prec = (tp + fp) === 0 ? 0 : tp / (tp + fp);
+  const rec = (tp + fn) === 0 ? 0 : tp / (tp + fn);
+  const f1 = (prec + rec) === 0 ? 0 : 2 * prec * rec / (prec + rec);
+  return { acc, prec, rec, f1, tp, fp, tn, fn };
+}
+
+// Regression metrics
+function regMetrics(preds, truth) {
+  const n = preds.length;
+  let ssRes = 0, ssTot = 0, absErr = 0;
+  const meanY = truth.reduce((s, y) => s + y, 0) / n;
+  for (let i = 0; i < n; i++) {
+    const e = truth[i] - preds[i];
+    ssRes += e * e;
+    ssTot += (truth[i] - meanY) ** 2;
+    absErr += Math.abs(e);
+  }
+  return {
+    rmse: Math.sqrt(ssRes / n),
+    mae: absErr / n,
+    r2: ssTot === 0 ? 0 : 1 - ssRes / ssTot
+  };
+}
+
+// Render a metric dashboard into an element
+function renderMetricDash(containerEl, metrics, highlightKey = null) {
+  let html = '<div class="metric-grid">';
+  for (const { label, value, key, tone } of metrics) {
+    let toneClass = '';
+    if (tone === 'warn') toneClass = 'warn';
+    else if (tone === 'good') toneClass = 'good';
+    else if (key === highlightKey) toneClass = 'highlight';
+    html += `<div class="metric-tile ${toneClass}">
+      <div class="m-label">${label}</div>
+      <div class="m-value">${value}</div>
+    </div>`;
+  }
+  html += '</div>';
+  containerEl.innerHTML = html;
+}
+
+// Comparison tracker — remembers last N states and shows deltas
+class CompareTracker {
+  constructor(panelEl, keys) {
+    this.el = panelEl;
+    this.keys = keys; // [{key, label, fmt}]
+    this.last = null;
+  }
+  update(current) {
+    if (this.last) {
+      let html = '<strong style="font-family:var(--mono);font-size:0.62rem;letter-spacing:0.08em;color:var(--blue-mid);">Δ SINCE LAST CHANGE</strong>';
+      this.keys.forEach(({key, label, fmt, higherIsBetter = true}) => {
+        const now = current[key], was = this.last[key];
+        if (now == null || was == null) return;
+        const diff = now - was;
+        let cls = 'delta-flat', arrow = '→';
+        if (Math.abs(diff) > 0.001) {
+          const improved = higherIsBetter ? diff > 0 : diff < 0;
+          cls = improved ? 'delta-up' : 'delta-down';
+          arrow = diff > 0 ? '↑' : '↓';
+        }
+        const fmtFn = fmt || (x => x.toFixed(3));
+        html += `<div class="cmp-row"><span>${label}</span>
+          <span class="${cls}">${fmtFn(was)} ${arrow} ${fmtFn(now)}
+          ${Math.abs(diff) > 0.001 ? '(' + (diff > 0 ? '+' : '') + fmtFn(diff) + ')' : ''}</span></div>`;
+      });
+      this.el.innerHTML = html;
+      this.el.classList.add('show');
+    }
+    this.last = { ...current };
+  }
+  reset() {
+    this.last = null;
+    this.el.innerHTML = '';
+    this.el.classList.remove('show');
+  }
+}
+
+// Narrative engine — picks the most salient message based on model state
+function setNarrative(el, { label, text, tone = 'default' }) {
+  el.className = 'narrative-box' + (tone !== 'default' ? ' ' + tone : '');
+  el.innerHTML = `<span class="nar-label">${label}</span>${text}`;
+}
+
+// Render train/test split bar
+function renderSplitBar(el, nTrain, nTest) {
+  const total = nTrain + nTest;
+  const trainPct = (nTrain / total * 100).toFixed(0);
+  const testPct = (nTest / total * 100).toFixed(0);
+  el.innerHTML = `
+    <div class="split-bar">
+      <div class="train-seg" style="width:${trainPct}%"></div>
+      <div class="test-seg" style="width:${testPct}%"></div>
+    </div>
+    <div class="split-legend">
+      <span><span class="dot" style="background:var(--blue-mid)"></span>Train ${nTrain} (${trainPct}%)</span>
+      <span><span class="dot" style="background:var(--orange)"></span>Test ${nTest} (${testPct}%)</span>
+    </div>
+  `;
+}
+
+// Build a sklearn-style param row (slider + label + value)
+function paramRow({ skName, plain, id, min, max, step = 1, value, fmt = v => v }) {
+  return `
+    <div class="param-row">
+      <div class="param-label">
+        <span class="sk">${skName}</span>
+        <span class="plain">${plain}</span>
+      </div>
+      <input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${value}"/>
+      <span class="param-value" id="${id}-v">${fmt(value)}</span>
+    </div>
+  `;
+}
+
+// Build a segmented toggle
+function segToggle({ id, options, value }) {
+  const btns = options.map(o =>
+    `<button data-val="${o.value}" class="${o.value === value ? 'active' : ''}">${o.label}</button>`
+  ).join('');
+  return `<div class="seg-toggle" id="${id}">${btns}</div>`;
+}
+
+function wireSegToggle(id, onChange) {
+  const root = document.getElementById(id);
+  root.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', () => {
+      root.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      onChange(b.dataset.val);
+    });
+  });
+}
+
+// Generate synthetic 2D labeled data for classification playgrounds
+// Two Gaussian clusters with configurable separation + noise
+function genClassData(n = 120, separation = 120, noise = 35, seed = 1) {
+  // Use a simple LCG for deterministic generation
+  let s = seed;
+  const rnd = () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+  const gauss = () => {
+    let u = 0, v = 0;
+    while (u === 0) u = rnd();
+    while (v === 0) v = rnd();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  };
+  const pts = [];
+  const cx1 = 300 - separation / 2, cy1 = 200;
+  const cx2 = 300 + separation / 2, cy2 = 200;
+  for (let i = 0; i < n; i++) {
+    const cls = i < n / 2 ? 0 : 1;
+    const cx = cls === 0 ? cx1 : cx2;
+    const cy = cls === 0 ? cy1 : cy2;
+    pts.push({
+      x: cx + gauss() * noise,
+      y: cy + gauss() * noise,
+      cls
+    });
+  }
+  return pts;
+}
+
+// ============================================================
+// Build lesson containers
+// ============================================================
+const main = document.getElementById('main');
+NAV_ORDER.forEach((id, i) => {
+  const div = document.createElement('div');
+  div.className = 'lesson' + (i === 0 ? ' active' : '');
+  div.dataset.id = id;
+  div.id = 'lesson-' + id;
+  main.appendChild(div);
+});
+
+// ============================================================
+// Utility: build lesson layout helper
+// ============================================================
+function buildLesson(id, config) {
+  const el = document.getElementById('lesson-' + id);
+  el.innerHTML = `
+    <div class="lesson-header">
+      <div class="eyebrow">WEEK ${config.week} <span class="divider">·</span> ${config.chapter}</div>
+      <h2>${config.title}</h2>
+      <p class="tagline">${config.tagline}</p>
+    </div>
+    <div class="grid">
+      <div class="panel viz">
+        <div class="viz-header">
+          <h3>Interactive Visualization</h3>
+          <span class="viz-hint">${config.hint}</span>
+        </div>
+        ${config.vizHTML}
+      </div>
+      <div class="panel">
+        <h3>What's Happening</h3>
+        ${config.explanation}
+      </div>
+    </div>
+
+    <div class="uses">
+      <h4>Where you'd actually use this</h4>
+      ${config.uses.map(u => `<div class="use-item"><strong>${u.domain}:</strong> ${u.example}</div>`).join('')}
+    </div>
+
+    <div class="two-col">
+      <div class="wins">
+        <h4>Reach for this when…</h4>
+        <ul>${config.wins.map(w => `<li>${w}</li>`).join('')}</ul>
+      </div>
+      <div class="fails">
+        <h4>Avoid when…</h4>
+        <ul>${config.fails.map(f => `<li>${f}</li>`).join('')}</ul>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// Helper: make an SVG element draggable (Pointer Events — iOS safe)
+// ============================================================
+function makeDraggable(el, svg, onMove) {
+  let activePointerId = null;
+
+  const getPt = (evt) => {
+    const pt = svg.createSVGPoint();
+    pt.x = evt.clientX;
+    pt.y = evt.clientY;
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+  };
+
+  el.style.touchAction = 'none';
+
+  el.addEventListener('pointerdown', (e) => {
+    activePointerId = e.pointerId;
+    el.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  el.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== activePointerId) return;
+    const p = getPt(e);
+    onMove(p.x, p.y);
+    e.preventDefault();
+  });
+
+  const release = (e) => {
+    if (e.pointerId !== activePointerId) return;
+    try { el.releasePointerCapture(e.pointerId); } catch (_) {}
+    activePointerId = null;
+  };
+  el.addEventListener('pointerup', release);
+  el.addEventListener('pointercancel', release);
+}
+
+// ============================================================
+// LESSON: PCA (Week 4)
+// ============================================================
+buildLesson('pca', {
+  week: 4,
+  chapter: 'Chapter 4 — Dimension Reduction',
+  title: 'Principal Component <em>Analysis</em>',
+  tagline: 'A 5-feature dataset with tunable correlation and noise. Adjust n_components and scaling the way you would in scikit-learn, then read the scree plot and cumulative explained variance to decide how many components to keep.',
+  hint: 'TUNE n_components · TOGGLE SCALING · READ THE SCREE PLOT',
+  vizHTML: `
+    <svg class="canvas" viewBox="0 0 600 420" id="pca-svg">
+      <text x="70" y="30" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae" font-weight="600">2D PROJECTION (PC1 × PC2)</text>
+      <text x="340" y="30" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae" font-weight="600">SCREE PLOT</text>
+      <line x1="50" y1="50" x2="290" y2="50" stroke="#c8d8ec"/>
+      <line x1="50" y1="50" x2="50" y2="250" stroke="#c8d8ec"/>
+      <line x1="50" y1="250" x2="290" y2="250" stroke="#c8d8ec"/>
+      <line x1="340" y1="50" x2="340" y2="250" stroke="#c8d8ec"/>
+      <line x1="340" y1="250" x2="560" y2="250" stroke="#c8d8ec"/>
+      <g id="pca-points"></g>
+      <g id="pca-arrows"></g>
+      <g id="pca-scree"></g>
+      <g id="pca-cumulative"></g>
+      <text x="70" y="275" font-family="IBM Plex Mono" font-size="9" fill="#6d82ae">PC1 →</text>
+      <text x="360" y="275" font-family="IBM Plex Mono" font-size="9" fill="#6d82ae">Component →</text>
+
+      <text x="70" y="310" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae" font-weight="600">CUMULATIVE EXPLAINED VARIANCE</text>
+      <line x1="50" y1="325" x2="560" y2="325" stroke="#c8d8ec"/>
+      <line x1="50" y1="325" x2="50" y2="395" stroke="#c8d8ec"/>
+      <line x1="50" y1="395" x2="560" y2="395" stroke="#c8d8ec"/>
+      <line x1="50" y1="339" x2="560" y2="339" stroke="#c8d8ec" stroke-dasharray="3,3" opacity="0.6"/>
+      <text x="30" y="328" text-anchor="end" font-family="IBM Plex Mono" font-size="8" fill="#6d82ae">100%</text>
+      <text x="30" y="344" text-anchor="end" font-family="IBM Plex Mono" font-size="8" fill="#1fa85a">95%</text>
+      <text x="30" y="398" text-anchor="end" font-family="IBM Plex Mono" font-size="8" fill="#6d82ae">0%</text>
+      <g id="pca-cum-bars"></g>
+    </svg>
+    <div class="controls">
+      <div class="param-group">
+        <h5>PCA Hyperparameters</h5>
+        ${paramRow({ skName: 'n_components', plain: 'How many PCs to keep', id: 'pca-nc', min: 1, max: 5, value: 2, fmt: v => v })}
+        <div class="param-row">
+          <div class="param-label">
+            <span class="sk">StandardScaler()</span>
+            <span class="plain">Scale features to unit variance</span>
+          </div>
+          ${segToggle({ id: 'pca-scale', options: [{value:'on', label:'On'}, {value:'off', label:'Off'}], value: 'on' })}
+        </div>
+        <div class="param-row">
+          <div class="param-label">
+            <span class="sk">svd_solver</span>
+            <span class="plain">Full vs randomized SVD</span>
+          </div>
+          ${segToggle({ id: 'pca-solver', options: [{value:'full', label:'full'}, {value:'randomized', label:'randomized'}], value: 'full' })}
+        </div>
+      </div>
+
+      <div class="param-group">
+        <h5>Dataset Shape</h5>
+        ${paramRow({ skName: 'correlation', plain: 'Feature intercorrelation strength', id: 'pca-corr', min: 0, max: 0.95, step: 0.05, value: 0.75, fmt: v => (+v).toFixed(2) })}
+        ${paramRow({ skName: 'noise', plain: 'Measurement noise level', id: 'pca-noise', min: 0.05, max: 1, step: 0.05, value: 0.3, fmt: v => (+v).toFixed(2) })}
+        ${paramRow({ skName: 'f5_scale', plain: 'Feature 5 scale (unscaled data)', id: 'pca-f5', min: 1, max: 100, step: 1, value: 1, fmt: v => (+v).toFixed(0) + '×' })}
+      </div>
+
+      <div class="metrics-dash">
+        <h5>Variance Captured</h5>
+        <div id="pca-metrics"></div>
+      </div>
+
+      <div class="narrative-box" id="pca-narrative">
+        <span class="nar-label">Status</span>Adjust a slider to see PCA respond.
+      </div>
+
+      <div class="compare-panel" id="pca-compare"></div>
+
+      <div class="action-row">
+        <button class="btn ghost" id="pca-reset">Reset to defaults</button>
+      </div>
+    </div>
+  `,
+  explanation: `
+    <p>PCA answers a simple question: if you had to describe a cloud of high-dimensional data with a smaller set of axes, which directions would lose the least information?</p>
+    <p>The <strong>scree plot</strong> (top right) shows the variance captured by each principal component in descending order. The <strong>cumulative variance bar</strong> (bottom) shows how much total variance you retain as you keep more components. The 95% line is a common rule of thumb. Keep enough PCs to get above it.</p>
+    <div class="callout">Try this: turn StandardScaler <strong>Off</strong> and raise feature_5 scale to 50×. Watch PC1 collapse to almost 100% variance. PCA has become a single-feature detector for feature 5. This is the most common PCA mistake in practice: forgetting to scale.</div>
+    <p>The <strong>svd_solver</strong> toggle shows how scikit-learn offers a faster approximate algorithm (<code>randomized</code>) for large datasets. You'll see tiny numerical differences in the exact variance values, which is expected.</p>
+    <p>In production, with 200 correlated features, PCA might compress them to 15 components that explain 95% of the variance. That compression is the entire value.</p>
+  `,
+  uses: [
+    { domain: 'Credit scoring', example: '400-variable bureau file compressed to 15–20 components before modeling.' },
+    { domain: 'Customer segmentation', example: '80 behavioral metrics reduced to 5 interpretable dimensions (roughly: spend level, frequency, breadth).' },
+    { domain: 'Manufacturing', example: 'Sensor streams from 200 IoT devices compressed before quality prediction.' },
+    { domain: 'Image compression', example: 'The technique behind early facial recognition (eigenfaces).' }
+  ],
+  wins: [
+    'Many correlated numeric features',
+    'You need to visualize high-dimensional data in 2D or 3D',
+    'Upstream of clustering, where noise hurts',
+    'Storage or compute cost matters in production'
+  ],
+  fails: [
+    'Interpretability required, since "component 3" means nothing to a regulator',
+    'Features are mostly categorical (PCA is for numeric data)',
+    'Relationships are strongly non-linear',
+    'Only a handful of features to start with, so there is no problem to solve'
+  ]
+});
+
+(function() {
+  const svg = document.getElementById('pca-svg');
+  const ptsG = document.getElementById('pca-points');
+  const arrowsG = document.getElementById('pca-arrows');
+  const screeG = document.getElementById('pca-scree');
+  const cumG = document.getElementById('pca-cum-bars');
+  const ncSl = document.getElementById('pca-nc');
+  const corrSl = document.getElementById('pca-corr');
+  const noiseSl = document.getElementById('pca-noise');
+  const f5Sl = document.getElementById('pca-f5');
+  const metricsEl = document.getElementById('pca-metrics');
+  const narrativeEl = document.getElementById('pca-narrative');
+
+  let scaling = 'on', solver = 'full';
+  let N_FEAT = 5;
+  let data = [];
+
+  function generate() {
+    const corr = parseFloat(corrSl.value);
+    const noise = parseFloat(noiseSl.value);
+    const f5Scale = parseFloat(f5Sl.value);
+    // Latent factor model: 2 true latents drive 5 features, features 1-4 correlated through latent 1,
+    // feature 5 partly through latent 2. Noise added per feature.
+    let s = 777;
+    const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+    const gauss = () => {
+      let u = 0, v = 0; while (u === 0) u = rnd(); while (v === 0) v = rnd();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    };
+
+    const n = 60;
+    data = [];
+    for (let i = 0; i < n; i++) {
+      const z1 = gauss(); // shared latent
+      const z2 = gauss(); // second latent
+      // First 4 features correlated through z1
+      const x1 = corr * z1 + (1 - corr) * gauss() * noise * 2;
+      const x2 = corr * z1 + (1 - corr) * gauss() * noise * 2;
+      const x3 = corr * z1 * 0.8 + (1 - corr) * gauss() * noise * 2;
+      const x4 = -corr * z1 * 0.6 + (1 - corr) * gauss() * noise * 2;
+      // Feature 5 mixes z2 and noise, and can have exaggerated scale
+      const x5 = (z2 + gauss() * noise) * f5Scale;
+      data.push([x1, x2, x3, x4, x5]);
+    }
+  }
+
+  // Compute PCA via numerical SVD-like approach (power iteration for top k components)
+  function fitPCA(X, k) {
+    let Y = X.map(r => r.slice());
+    const n = Y.length, p = Y[0].length;
+
+    // Center
+    const means = Array(p).fill(0);
+    for (const row of Y) for (let j = 0; j < p; j++) means[j] += row[j];
+    for (let j = 0; j < p; j++) means[j] /= n;
+    Y = Y.map(r => r.map((v, j) => v - means[j]));
+
+    // Scale (optional)
+    if (scaling === 'on') {
+      const std = Array(p).fill(0);
+      for (const row of Y) for (let j = 0; j < p; j++) std[j] += row[j] * row[j];
+      for (let j = 0; j < p; j++) std[j] = Math.sqrt(std[j] / (n - 1)) || 1;
+      Y = Y.map(r => r.map((v, j) => v / std[j]));
+    }
+
+    // Covariance matrix
+    const C = Array.from({length: p}, () => Array(p).fill(0));
+    for (const row of Y) {
+      for (let a = 0; a < p; a++) for (let b = 0; b < p; b++) C[a][b] += row[a] * row[b] / (n - 1);
+    }
+
+    // Power iteration with deflation for top k eigen-pairs
+    const eigenvals = [], eigenvecs = [];
+    let work = C.map(r => r.slice());
+    for (let comp = 0; comp < p; comp++) {
+      let v = Array(p).fill(0).map(() => Math.random() - 0.5);
+      // Randomized solver uses fewer iterations (approximation); full = more iterations
+      const iters = solver === 'randomized' ? 15 : 60;
+      for (let it = 0; it < iters; it++) {
+        // v = work * v
+        const nv = Array(p).fill(0);
+        for (let a = 0; a < p; a++) for (let b = 0; b < p; b++) nv[a] += work[a][b] * v[b];
+        const norm = Math.sqrt(nv.reduce((s, x) => s + x * x, 0)) || 1;
+        v = nv.map(x => x / norm);
+      }
+      // eigenvalue = v^T work v
+      let lam = 0;
+      for (let a = 0; a < p; a++) for (let b = 0; b < p; b++) lam += v[a] * work[a][b] * v[b];
+      eigenvals.push(lam);
+      eigenvecs.push(v);
+      // Deflate: work = work - lam * v v^T
+      for (let a = 0; a < p; a++) for (let b = 0; b < p; b++) work[a][b] -= lam * v[a] * v[b];
+    }
+    // Normalize eigenvalues to non-negative (numerical artifacts)
+    const totalVar = eigenvals.reduce((s, e) => s + Math.max(e, 0), 0) || 1;
+    const explained = eigenvals.map(e => Math.max(e, 0) / totalVar);
+
+    // Project data onto components
+    const projected = Y.map(row => eigenvecs.map(vec =>
+      row.reduce((s, val, idx) => s + val * vec[idx], 0)
+    ));
+
+    return { eigenvals, eigenvecs, explained, projected, Y, means };
+  }
+
+  const tracker = new CompareTracker(
+    document.getElementById('pca-compare'),
+    [
+      { key: 'pc1',         label: 'PC1 variance',         fmt: v => (v*100).toFixed(1) + '%', higherIsBetter: false },
+      { key: 'cumulative',  label: 'Cum. var (n_comp)',    fmt: v => (v*100).toFixed(1) + '%', higherIsBetter: true },
+      { key: 'reached95',   label: 'PCs for 95%',          fmt: v => String(v),                 higherIsBetter: false }
+    ]
+  );
+
+  function render() {
+    const nComp = parseInt(ncSl.value);
+    document.getElementById('pca-nc-v').textContent = nComp;
+    document.getElementById('pca-corr-v').textContent = parseFloat(corrSl.value).toFixed(2);
+    document.getElementById('pca-noise-v').textContent = parseFloat(noiseSl.value).toFixed(2);
+    document.getElementById('pca-f5-v').textContent = parseFloat(f5Sl.value).toFixed(0) + '×';
+
+    const { explained, projected } = fitPCA(data, nComp);
+
+    // --- 2D projection (left panel, 50-290 x 50-250) ---
+    const projX = projected.map(r => r[0]);
+    const projY = projected.map(r => r[1] || 0);
+    const xMin = Math.min(...projX), xMax = Math.max(...projX);
+    const yMin = Math.min(...projY), yMax = Math.max(...projY);
+    const xRng = (xMax - xMin) || 1, yRng = (yMax - yMin) || 1;
+    const pad = 15;
+    ptsG.innerHTML = projected.map(r => {
+      const px = 50 + pad + (r[0] - xMin) / xRng * (240 - 2*pad);
+      const py = 50 + pad + (240 - 2*pad) - (((r[1] || 0) - yMin) / yRng * (240 - 2*pad));
+      return `<circle cx="${px}" cy="${py}" r="3.5" fill="#102a56" opacity="0.6"/>`;
+    }).join('');
+
+    // --- Scree plot (right panel, 340-560 x 50-250) ---
+    const bw = 35, gap = 8;
+    const scrBars = explained.map((v, i) => {
+      const h = v * 180;
+      const x = 355 + i * (bw + gap);
+      const y = 250 - h;
+      const kept = i < nComp;
+      const col = kept ? '#2557c7' : '#c8d8ec';
+      return `<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${col}" opacity="${kept ? 0.85 : 0.6}" rx="2"/>
+              <text x="${x + bw/2}" y="${265}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="${kept ? '#2557c7' : '#6d82ae'}">PC${i+1}</text>
+              <text x="${x + bw/2}" y="${y - 4}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="#102a56" font-weight="600">${(v*100).toFixed(0)}%</text>`;
+    }).join('');
+    screeG.innerHTML = scrBars;
+
+    // --- Cumulative variance (bottom panel, 50-560 x 325-395) ---
+    const segWidth = (560 - 50) / N_FEAT;
+    let cum = 0;
+    const cumBars = explained.map((v, i) => {
+      const x0 = 50 + i * segWidth;
+      const kept = i < nComp;
+      const prevCum = cum;
+      cum += v;
+      const y0 = 395 - cum * 70;   // 70 px for full 100%
+      const yPrev = 395 - prevCum * 70;
+      return `<rect x="${x0}" y="${y0}" width="${segWidth}" height="${395 - y0}"
+                   fill="${kept ? '#1fa85a' : '#c8d8ec'}" opacity="${kept ? 0.4 : 0.3}"/>
+              <text x="${x0 + segWidth/2}" y="${395 - cum * 70 - 3}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="${kept ? '#1fa85a' : '#6d82ae'}" font-weight="600">${(cum*100).toFixed(0)}%</text>`;
+    }).join('');
+    cumG.innerHTML = cumBars;
+
+    // --- Metrics ---
+    const cumulativeKept = explained.slice(0, nComp).reduce((s, v) => s + v, 0);
+    let reached95 = explained.length;
+    let running = 0;
+    for (let i = 0; i < explained.length; i++) {
+      running += explained[i];
+      if (running >= 0.95) { reached95 = i + 1; break; }
+    }
+    const cumTone = cumulativeKept >= 0.95 ? 'good' : (cumulativeKept < 0.70 ? 'warn' : null);
+
+    renderMetricDash(metricsEl, [
+      { label: 'PC1 variance',    value: (explained[0]*100).toFixed(1) + '%' },
+      { label: 'PC2 variance',    value: (explained[1]*100).toFixed(1) + '%' },
+      { label: 'Cum. (kept)',     value: (cumulativeKept*100).toFixed(1) + '%', tone: cumTone },
+      { label: 'PCs for 95%',     value: String(reached95) },
+      { label: 'Info lost',       value: ((1-cumulativeKept)*100).toFixed(1) + '%' },
+      { label: 'Dim reduction',   value: N_FEAT + '→' + nComp }
+    ]);
+
+    // --- Narrative ---
+    const f5ScaleVal = parseFloat(f5Sl.value);
+    if (scaling === 'off' && f5ScaleVal > 10) {
+      setNarrative(narrativeEl, {
+        label: 'Scaling warning',
+        text: `With scaling off and feature_5 at ${f5ScaleVal.toFixed(0)}× the scale of the others, PCA has collapsed to detecting feature_5 alone (PC1 = ${(explained[0]*100).toFixed(0)}%). The variance you are capturing is the scale artifact, not the signal. This is the single most common PCA mistake.`,
+        tone: 'alert'
+      });
+    } else if (cumulativeKept < 0.70) {
+      setNarrative(narrativeEl, {
+        label: 'Undercompressing',
+        text: `Your ${nComp} component${nComp===1?'':'s'} only capture ${(cumulativeKept*100).toFixed(0)}% of variance. You are losing too much signal. Either raise n_components or reconsider whether your features are compressible at all.`,
+        tone: 'alert'
+      });
+    } else if (cumulativeKept > 0.95 && nComp > reached95) {
+      setNarrative(narrativeEl, {
+        label: 'Over-retaining',
+        text: `You are keeping ${nComp} components but only ${reached95} were needed to hit 95% variance. Drop the extras for cleaner downstream modeling.`,
+        tone: 'default'
+      });
+    } else if (cumulativeKept >= 0.95) {
+      setNarrative(narrativeEl, {
+        label: 'Good compression',
+        text: `Keeping ${nComp} component${nComp===1?'':'s'} retains ${(cumulativeKept*100).toFixed(0)}% of variance. You compressed ${N_FEAT} features to ${nComp} with minimal information loss.`,
+        tone: 'success'
+      });
+    } else if (parseFloat(corrSl.value) < 0.25) {
+      setNarrative(narrativeEl, {
+        label: 'Poor compressibility',
+        text: `Correlation is ${parseFloat(corrSl.value).toFixed(2)}. When features are already uncorrelated, PCA has little to offer. Each component captures a similar share of variance and dropping any one loses real information.`,
+        tone: 'default'
+      });
+    } else {
+      setNarrative(narrativeEl, {
+        label: 'Status',
+        text: `n_components=${nComp} captures ${(cumulativeKept*100).toFixed(0)}% of variance. You need ${reached95} components to hit the 95% threshold.`,
+        tone: 'default'
+      });
+    }
+
+    tracker.update({ pc1: explained[0], cumulative: cumulativeKept, reached95 });
+  }
+
+  [ncSl, corrSl, noiseSl, f5Sl].forEach(s => s.oninput = () => { generate(); render(); });
+  wireSegToggle('pca-scale', v => { scaling = v; render(); });
+  wireSegToggle('pca-solver', v => { solver = v; render(); });
+
+  document.getElementById('pca-reset').onclick = () => {
+    ncSl.value = 2; corrSl.value = 0.75; noiseSl.value = 0.3; f5Sl.value = 1;
+    scaling = 'on'; solver = 'full';
+    document.querySelectorAll('#pca-scale button').forEach(b => b.classList.toggle('active', b.dataset.val === 'on'));
+    document.querySelectorAll('#pca-solver button').forEach(b => b.classList.toggle('active', b.dataset.val === 'full'));
+    tracker.reset();
+    generate(); render();
+  };
+
+  generate();
+  render();
+})();
+
+// ============================================================
+// LESSON: EVALUATION (Week 5)
+// ============================================================
+buildLesson('evaluation', {
+  week: 5,
+  chapter: 'Chapter 5 — Evaluating Predictive Performance',
+  title: 'Confusion Matrix, Precision, <em>Recall</em>',
+  tagline: 'A classifier score-line, a ROC curve, and cost-sensitive evaluation. Move the threshold, set the business cost of false positives vs false negatives, and watch the optimal threshold shift.',
+  hint: 'DRAG THE THRESHOLD · SET BUSINESS COSTS · WATCH OPTIMAL POINT MOVE',
+  vizHTML: `
+    <svg class="canvas" viewBox="0 0 600 420" id="eval-svg">
+      <!-- Score line panel (top: 0-200) -->
+      <text x="60" y="25" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae" font-weight="600">PREDICTED SCORE DISTRIBUTION</text>
+      <g id="eval-scores"></g>
+      <line id="eval-threshold-line" x1="300" y1="35" x2="300" y2="185" stroke="#ff6b1a" stroke-width="2" stroke-dasharray="4,3"/>
+      <circle id="eval-handle" cx="300" cy="30" r="12" fill="#ff6b1a" stroke="#ffffff" stroke-width="3" class="pt"/>
+      <text x="60" y="195" font-family="IBM Plex Mono" font-size="9" fill="#6d82ae">low score</text>
+      <text x="540" y="195" text-anchor="end" font-family="IBM Plex Mono" font-size="9" fill="#6d82ae">high score</text>
+
+      <!-- ROC panel (bottom left: 220-420, 0-200) -->
+      <text x="230" y="225" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae" font-weight="600">ROC CURVE</text>
+      <line x1="230" y1="235" x2="230" y2="410" stroke="#c8d8ec"/>
+      <line x1="230" y1="410" x2="405" y2="410" stroke="#c8d8ec"/>
+      <line x1="230" y1="410" x2="405" y2="235" stroke="#c8d8ec" stroke-dasharray="2,2" opacity="0.5"/>
+      <path id="eval-roc-path" fill="none" stroke="#2557c7" stroke-width="2"/>
+      <circle id="eval-roc-point" cx="0" cy="0" r="6" fill="#ff6b1a" stroke="#fff" stroke-width="2"/>
+      <text x="228" y="425" text-anchor="start" font-family="IBM Plex Mono" font-size="8" fill="#6d82ae">FPR →</text>
+      <text x="225" y="233" text-anchor="end" font-family="IBM Plex Mono" font-size="8" fill="#6d82ae">TPR ↑</text>
+
+      <!-- Confusion matrix panel (bottom right: 430-590, 240-410) -->
+      <text x="440" y="225" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae" font-weight="600">CONFUSION MATRIX</text>
+      <g id="eval-confusion"></g>
+    </svg>
+    <div class="controls">
+      <div class="param-group">
+        <h5>Decision Threshold</h5>
+        ${paramRow({ skName: 'threshold', plain: 'P(positive) cutoff', id: 'eval-thr', min: 0.05, max: 0.95, step: 0.02, value: 0.5, fmt: v => (+v).toFixed(2) })}
+      </div>
+
+      <div class="param-group">
+        <h5>Business Costs (cost-sensitive)</h5>
+        ${paramRow({ skName: 'fp_cost', plain: 'Cost per false positive (wasted action)', id: 'eval-fp', min: 1, max: 100, step: 1, value: 10, fmt: v => '$' + v })}
+        ${paramRow({ skName: 'fn_cost', plain: 'Cost per false negative (missed positive)', id: 'eval-fn', min: 1, max: 100, step: 1, value: 50, fmt: v => '$' + v })}
+        <div style="font-family: var(--mono); font-size: 0.68rem; color: var(--ink-mute); margin-top: 0.35rem; padding: 0.4rem 0.5rem; background: var(--bg-panel); border-radius: 3px;">
+          Cost-optimal threshold: <span id="eval-opt-thr" style="color: var(--accent); font-weight: 600;">—</span>
+        </div>
+      </div>
+
+      <div class="param-group">
+        <h5>Problem Setup</h5>
+        ${paramRow({ skName: 'base_rate', plain: 'Positive class frequency', id: 'eval-br', min: 0.05, max: 0.5, step: 0.05, value: 0.3, fmt: v => (+v*100).toFixed(0) + '%' })}
+        ${paramRow({ skName: 'separability', plain: 'How well classes separate', id: 'eval-sep', min: 0.1, max: 0.9, step: 0.05, value: 0.5, fmt: v => (+v).toFixed(2) })}
+      </div>
+
+      <div class="metrics-dash">
+        <h5>At Current Threshold</h5>
+        <div id="eval-metrics"></div>
+      </div>
+
+      <div class="narrative-box" id="eval-narrative">
+        <span class="nar-label">Status</span>Adjust the threshold to see tradeoffs.
+      </div>
+
+      <div class="compare-panel" id="eval-compare"></div>
+
+      <div class="action-row">
+        <button class="btn ghost" id="eval-reset">Reset to defaults</button>
+        <button class="btn" id="eval-use-optimal">Jump to cost-optimal threshold</button>
+      </div>
+    </div>
+  `,
+  explanation: `
+    <p>Every classifier outputs a score, typically a probability between 0 and 1. A threshold converts that score into a yes/no decision. Default is 0.5, but that's a choice, not a law.</p>
+    <p>The <strong>ROC curve</strong> (bottom left) plots True Positive Rate versus False Positive Rate across every possible threshold. The orange dot is where your current threshold sits on that curve. AUC (the area under the curve) measures the model's intrinsic quality, independent of any single threshold choice.</p>
+    <div class="callout">The real insight: once you set a cost per false positive and a cost per false negative, there is an optimal threshold, not 0.5. Move the cost sliders and watch the "Cost-optimal threshold" readout change. Then click "Jump to cost-optimal" and see how much money per case you just saved.</div>
+    <p>A fraud team facing $50 per missed fraud and $10 per wasted investigation lands around threshold 0.16. A spam filter facing $0.01 per wasted email and $5 per lost real email lands around 0.95. Same model, different businesses, different thresholds. This is the decision, not the accuracy score.</p>
+  `,
+  uses: [
+    { domain: 'Fraud detection', example: 'Low threshold = catch more fraud, accept more false alarms. Investigator bandwidth sets the limit.' },
+    { domain: 'Medical screening', example: 'Low threshold for cancer screening, because missing cancer is far worse than a false alarm.' },
+    { domain: 'Spam filtering', example: 'High threshold, because sending real email to junk is worse than letting spam through.' },
+    { domain: 'Marketing', example: 'Lift charts: top-scoring 10% of customers contain 40% of future buyers. Mail those first.' }
+  ],
+  wins: [
+    'Every classification model needs this evaluation',
+    'Any problem where false positives and false negatives have different costs',
+    'Imbalanced classes (fraud, churn, disease, almost everything)',
+    'Communicating tradeoffs to business stakeholders'
+  ],
+  fails: [
+    'Reporting accuracy alone on imbalanced data is the classic trap',
+    'Using default 0.5 threshold without thinking about business costs',
+    'Evaluating on training data (use a held-out test set, always)'
+  ]
+});
+
+(function() {
+  const svg = document.getElementById('eval-svg');
+  const handle = document.getElementById('eval-handle');
+  const line = document.getElementById('eval-threshold-line');
+  const scoresG = document.getElementById('eval-scores');
+  const rocPath = document.getElementById('eval-roc-path');
+  const rocPoint = document.getElementById('eval-roc-point');
+  const confG = document.getElementById('eval-confusion');
+  const thrSl = document.getElementById('eval-thr');
+  const fpSl = document.getElementById('eval-fp');
+  const fnSl = document.getElementById('eval-fn');
+  const brSl = document.getElementById('eval-br');
+  const sepSl = document.getElementById('eval-sep');
+  const metricsEl = document.getElementById('eval-metrics');
+  const narrativeEl = document.getElementById('eval-narrative');
+  const optThrEl = document.getElementById('eval-opt-thr');
+  const LEFT = 60, RIGHT = 540;
+
+  let cases = [];
+
+  function generate() {
+    const br = parseFloat(brSl.value);
+    const sep = parseFloat(sepSl.value);
+    const n = 100;
+    const nPos = Math.floor(n * br);
+    const nNeg = n - nPos;
+    let s = 7;
+    const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+    const gauss = () => {
+      let u = 0, v = 0; while (u === 0) u = rnd(); while (v === 0) v = rnd();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    };
+    cases = [];
+    // Negative class centered low, positive class centered high
+    // Higher separability = bigger gap + smaller std
+    const std = 0.35 - sep * 0.25;
+    const negMean = 0.5 - sep * 0.3;
+    const posMean = 0.5 + sep * 0.3;
+    for (let i = 0; i < nNeg; i++) {
+      cases.push({ actual: 0, score: Math.max(0.01, Math.min(0.99, negMean + gauss() * std)) });
+    }
+    for (let i = 0; i < nPos; i++) {
+      cases.push({ actual: 1, score: Math.max(0.01, Math.min(0.99, posMean + gauss() * std)) });
+    }
+  }
+
+  function metricsAt(threshold) {
+    let tp = 0, fp = 0, fn = 0, tn = 0;
+    cases.forEach(c => {
+      const pred = c.score >= threshold ? 1 : 0;
+      if (c.actual === 1 && pred === 1) tp++;
+      else if (c.actual === 0 && pred === 1) fp++;
+      else if (c.actual === 1 && pred === 0) fn++;
+      else tn++;
+    });
+    const total = tp + fp + fn + tn;
+    const tpr = (tp + fn) > 0 ? tp / (tp + fn) : 0;
+    const fpr = (fp + tn) > 0 ? fp / (fp + tn) : 0;
+    const prec = (tp + fp) > 0 ? tp / (tp + fp) : 0;
+    const rec = tpr;
+    const f1 = (prec + rec) > 0 ? 2 * prec * rec / (prec + rec) : 0;
+    return { tp, fp, fn, tn, total, tpr, fpr, prec, rec, f1, acc: (tp + tn) / total };
+  }
+
+  function findOptimalThreshold() {
+    const fpCost = parseFloat(fpSl.value);
+    const fnCost = parseFloat(fnSl.value);
+    let bestThr = 0.5, bestCost = Infinity;
+    for (let t = 0.02; t <= 0.98; t += 0.02) {
+      const m = metricsAt(t);
+      const cost = m.fp * fpCost + m.fn * fnCost;
+      if (cost < bestCost) { bestCost = cost; bestThr = t; }
+    }
+    return { thr: bestThr, cost: bestCost };
+  }
+
+  // Render score-line dots at fixed positions by score
+  function renderScoreDots(threshold) {
+    // Place dots horizontally by score, and stack vertically in two bands (pos top, neg bottom)
+    const sorted = [...cases].map((c, i) => ({ ...c, _i: i }));
+    let negCount = 0, posCount = 0;
+    const dotsHtml = sorted.map(c => {
+      const x = LEFT + c.score * (RIGHT - LEFT);
+      let y;
+      if (c.actual === 1) { y = 55 + (posCount % 7) * 11; posCount++; }
+      else { y = 135 + (negCount % 5) * 11; negCount++; }
+      const pred = c.score >= threshold ? 1 : 0;
+      const isError = pred !== c.actual;
+      const fill = c.actual === 1 ? '#1fa85a' : '#102a56';
+      const opacity = c.actual === 1 ? 0.85 : 0.45;
+      const stroke = isError ? '#ff6b1a' : 'none';
+      const sw = isError ? 2 : 0;
+      return `<circle cx="${x}" cy="${y}" r="4" fill="${fill}" opacity="${opacity}" stroke="${stroke}" stroke-width="${sw}"/>`;
+    }).join('');
+    scoresG.innerHTML = dotsHtml;
+  }
+
+  function renderROC(currentThr) {
+    // Compute full ROC curve
+    const thrGrid = [];
+    for (let t = 0.001; t <= 0.999; t += 0.01) thrGrid.push(t);
+    const rocPoints = thrGrid.map(t => { const m = metricsAt(t); return { fpr: m.fpr, tpr: m.tpr }; });
+    // Project to panel coords (ROC panel: x 230-405, y 410-235)
+    const pxX = f => 230 + f * 175;
+    const pxY = t => 410 - t * 175;
+    const path = 'M ' + rocPoints.map(p => `${pxX(p.fpr)},${pxY(p.tpr)}`).join(' L ');
+    rocPath.setAttribute('d', path);
+
+    // AUC (trapezoid rule on the ROC)
+    let auc = 0;
+    for (let i = 1; i < rocPoints.length; i++) {
+      const a = rocPoints[i-1], b = rocPoints[i];
+      auc += Math.abs(a.fpr - b.fpr) * (a.tpr + b.tpr) / 2;
+    }
+
+    // Current point
+    const cur = metricsAt(currentThr);
+    rocPoint.setAttribute('cx', pxX(cur.fpr));
+    rocPoint.setAttribute('cy', pxY(cur.tpr));
+
+    return auc;
+  }
+
+  function renderConfusion(m) {
+    // Panel 430-590, 240-410
+    const cw = 75, ch = 65;
+    const cx = 450, cy = 250;
+    confG.innerHTML = `
+      <rect x="${cx}" y="${cy}" width="${cw}" height="${ch}" fill="#1fa85a" opacity="0.2" stroke="#1fa85a" stroke-width="1.5"/>
+      <text x="${cx + cw/2}" y="${cy + ch/2 - 3}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="#1fa85a">TP</text>
+      <text x="${cx + cw/2}" y="${cy + ch/2 + 12}" text-anchor="middle" font-family="DM Serif Display" font-size="16" fill="#1fa85a">${m.tp}</text>
+
+      <rect x="${cx + cw}" y="${cy}" width="${cw}" height="${ch}" fill="#e63946" opacity="0.15" stroke="#e63946" stroke-width="1.5"/>
+      <text x="${cx + cw + cw/2}" y="${cy + ch/2 - 3}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="#e63946">FN</text>
+      <text x="${cx + cw + cw/2}" y="${cy + ch/2 + 12}" text-anchor="middle" font-family="DM Serif Display" font-size="16" fill="#e63946">${m.fn}</text>
+
+      <rect x="${cx}" y="${cy + ch}" width="${cw}" height="${ch}" fill="#e63946" opacity="0.15" stroke="#e63946" stroke-width="1.5"/>
+      <text x="${cx + cw/2}" y="${cy + ch + ch/2 - 3}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="#e63946">FP</text>
+      <text x="${cx + cw/2}" y="${cy + ch + ch/2 + 12}" text-anchor="middle" font-family="DM Serif Display" font-size="16" fill="#e63946">${m.fp}</text>
+
+      <rect x="${cx + cw}" y="${cy + ch}" width="${cw}" height="${ch}" fill="#1fa85a" opacity="0.2" stroke="#1fa85a" stroke-width="1.5"/>
+      <text x="${cx + cw + cw/2}" y="${cy + ch + ch/2 - 3}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="#1fa85a">TN</text>
+      <text x="${cx + cw + cw/2}" y="${cy + ch + ch/2 + 12}" text-anchor="middle" font-family="DM Serif Display" font-size="16" fill="#1fa85a">${m.tn}</text>
+
+      <text x="${cx + cw}" y="${cy - 6}" text-anchor="middle" font-family="IBM Plex Mono" font-size="8" fill="#6d82ae">Predicted →</text>
+      <text x="${cx - 8}" y="${cy + ch}" text-anchor="end" font-family="IBM Plex Mono" font-size="8" fill="#6d82ae" transform="rotate(-90 ${cx - 8} ${cy + ch})">Actual</text>
+      <text x="${cx + cw/2}" y="${cy - 22}" text-anchor="middle" font-family="IBM Plex Mono" font-size="8" fill="#6d82ae">pos</text>
+      <text x="${cx + cw + cw/2}" y="${cy - 22}" text-anchor="middle" font-family="IBM Plex Mono" font-size="8" fill="#6d82ae">neg</text>
+    `;
+  }
+
+  const tracker = new CompareTracker(
+    document.getElementById('eval-compare'),
+    [
+      { key: 'threshold', label: 'Threshold', fmt: v => v.toFixed(2),               higherIsBetter: true },
+      { key: 'prec',      label: 'Precision', fmt: v => (v*100).toFixed(1) + '%',    higherIsBetter: true },
+      { key: 'rec',       label: 'Recall',    fmt: v => (v*100).toFixed(1) + '%',    higherIsBetter: true },
+      { key: 'cost',      label: 'Business cost', fmt: v => '$' + v.toFixed(0),      higherIsBetter: false }
+    ]
+  );
+
+  function render() {
+    const threshold = parseFloat(thrSl.value);
+    const fpCost = parseFloat(fpSl.value);
+    const fnCost = parseFloat(fnSl.value);
+    document.getElementById('eval-thr-v').textContent = threshold.toFixed(2);
+    document.getElementById('eval-fp-v').textContent = '$' + fpCost;
+    document.getElementById('eval-fn-v').textContent = '$' + fnCost;
+    document.getElementById('eval-br-v').textContent = (parseFloat(brSl.value)*100).toFixed(0) + '%';
+    document.getElementById('eval-sep-v').textContent = parseFloat(sepSl.value).toFixed(2);
+
+    // Move threshold line & handle
+    const thX = LEFT + threshold * (RIGHT - LEFT);
+    line.setAttribute('x1', thX); line.setAttribute('x2', thX);
+    handle.setAttribute('cx', thX);
+
+    renderScoreDots(threshold);
+    const auc = renderROC(threshold);
+    const m = metricsAt(threshold);
+    renderConfusion(m);
+
+    // Optimal threshold
+    const opt = findOptimalThreshold();
+    optThrEl.textContent = `${opt.thr.toFixed(2)} (cost ~ $${opt.cost.toFixed(0)})`;
+
+    // Cost at current threshold
+    const currentCost = m.fp * fpCost + m.fn * fnCost;
+    const costPenalty = currentCost - opt.cost;
+
+    // Metric tiles
+    const costTone = costPenalty < 10 ? 'good' : (costPenalty > 100 ? 'warn' : null);
+    renderMetricDash(metricsEl, [
+      { label: 'Accuracy',  value: (m.acc * 100).toFixed(1) + '%' },
+      { label: 'Precision', value: (m.prec * 100).toFixed(1) + '%' },
+      { label: 'Recall',    value: (m.rec * 100).toFixed(1) + '%' },
+      { label: 'F1',        value: m.f1.toFixed(3) },
+      { label: 'AUC',       value: auc.toFixed(3), tone: auc > 0.85 ? 'good' : (auc < 0.65 ? 'warn' : null) },
+      { label: 'Total cost', value: '$' + currentCost.toFixed(0), tone: costTone }
+    ]);
+
+    // Narrative
+    const costRatio = fnCost / fpCost;
+    if (Math.abs(threshold - opt.thr) < 0.05) {
+      setNarrative(narrativeEl, {
+        label: 'At cost-optimal threshold',
+        text: `Your threshold ${threshold.toFixed(2)} is within 0.05 of the cost-optimal ${opt.thr.toFixed(2)}. With FN cost $${fnCost} and FP cost $${fpCost} you are as efficient as this model allows.`,
+        tone: 'success'
+      });
+    } else if (costPenalty > 150) {
+      setNarrative(narrativeEl, {
+        label: 'Leaving money on the table',
+        text: `At threshold ${threshold.toFixed(2)} you pay $${currentCost.toFixed(0)}. Cost-optimal threshold ${opt.thr.toFixed(2)} would cost $${opt.cost.toFixed(0)}, a $${costPenalty.toFixed(0)} saving.`,
+        tone: 'alert'
+      });
+    } else if (threshold < 0.3 && m.rec > 0.85) {
+      setNarrative(narrativeEl, {
+        label: 'Recall-maximized',
+        text: `Low threshold catches ${(m.rec*100).toFixed(0)}% of positives at the price of ${m.fp} false alarms. Good for fraud or cancer screening where missing a positive is expensive.`,
+        tone: 'default'
+      });
+    } else if (threshold > 0.7 && m.prec > 0.85) {
+      setNarrative(narrativeEl, {
+        label: 'Precision-maximized',
+        text: `High threshold means ${(m.prec*100).toFixed(0)}% of flagged cases are real, but you miss ${m.fn} positives. Good for spam filters, bad for medical screening.`,
+        tone: 'default'
+      });
+    } else if (auc < 0.65) {
+      setNarrative(narrativeEl, {
+        label: 'Weak model',
+        text: `AUC=${auc.toFixed(2)} means the classifier barely separates the classes. No threshold will fix this. You need a better model or more features.`,
+        tone: 'alert'
+      });
+    } else {
+      setNarrative(narrativeEl, {
+        label: 'Status',
+        text: `Threshold ${threshold.toFixed(2)}: precision ${(m.prec*100).toFixed(0)}%, recall ${(m.rec*100).toFixed(0)}%. Cost ratio FN:FP = ${costRatio.toFixed(1)}:1.`,
+        tone: 'default'
+      });
+    }
+
+    tracker.update({ threshold, prec: m.prec, rec: m.rec, cost: currentCost });
+  }
+
+  [thrSl, fpSl, fnSl].forEach(s => s.oninput = render);
+  [brSl, sepSl].forEach(s => s.oninput = () => { generate(); render(); });
+
+  makeDraggable(handle, svg, (x, y) => {
+    const t = Math.max(0.05, Math.min(0.95, (x - LEFT) / (RIGHT - LEFT)));
+    thrSl.value = t;
+    render();
+  });
+
+  document.getElementById('eval-reset').onclick = () => {
+    thrSl.value = 0.5; fpSl.value = 10; fnSl.value = 50; brSl.value = 0.3; sepSl.value = 0.5;
+    tracker.reset();
+    generate(); render();
+  };
+  document.getElementById('eval-use-optimal').onclick = () => {
+    const opt = findOptimalThreshold();
+    thrSl.value = opt.thr;
+    render();
+  };
+
+  generate();
+  render();
+})();
+
+// ============================================================
+// LESSON: LINEAR REGRESSION (Week 6)
+// ============================================================
+buildLesson('regression', {
+  week: 6,
+  chapter: 'Chapter 6 — Multiple Linear Regression',
+  title: 'Linear <em>Regression</em>',
+  tagline: 'Drag any point to reshape the data. Then switch between OLS, Ridge, and Lasso (the three flavors of linear regression scikit-learn offers) and see exactly how regularization changes the fit, especially when outliers or multicollinearity enter the picture.',
+  hint: 'DRAG POINTS · SWITCH REGULARIZATION · WATCH THE LINE CHANGE',
+  vizHTML: `
+    <svg class="canvas" viewBox="0 0 600 420" id="reg-svg">
+      <line x1="60" y1="360" x2="540" y2="360" stroke="#c8d8ec" stroke-width="1"/>
+      <line x1="60" y1="40" x2="60" y2="360" stroke="#c8d8ec" stroke-width="1"/>
+      <text x="545" y="375" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae">feature x →</text>
+      <text x="50" y="35" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae">target y ↑</text>
+
+      <g id="reg-residuals"></g>
+      <line id="reg-line-ols" x1="60" y1="200" x2="540" y2="200" stroke="#6d82ae" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.5"/>
+      <line id="reg-line" x1="60" y1="200" x2="540" y2="200" stroke="#ff6b1a" stroke-width="2.5"/>
+      <g id="reg-points"></g>
+
+      <!-- Legend -->
+      <g id="reg-legend">
+        <line x1="420" y1="55" x2="450" y2="55" stroke="#6d82ae" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.6"/>
+        <text x="455" y="58" font-family="IBM Plex Mono" font-size="9" fill="#6d82ae">OLS (unregularized)</text>
+        <line x1="420" y1="70" x2="450" y2="70" stroke="#ff6b1a" stroke-width="2.5"/>
+        <text x="455" y="73" font-family="IBM Plex Mono" font-size="9" fill="#ff6b1a">Current model</text>
+      </g>
+    </svg>
+    <div class="controls">
+      <div class="param-group">
+        <h5>Regularization Method</h5>
+        <div class="param-row">
+          <div class="param-label">
+            <span class="sk">method</span>
+            <span class="plain">Flavor of linear regression</span>
+          </div>
+          ${segToggle({ id: 'reg-method', options: [{value:'ols', label:'OLS'}, {value:'ridge', label:'Ridge (L2)'}, {value:'lasso', label:'Lasso (L1)'}], value: 'ols' })}
+        </div>
+        ${paramRow({ skName: 'alpha', plain: 'Regularization strength (0 = no shrinkage)', id: 'reg-alpha', min: 0, max: 3, step: 0.1, value: 0, fmt: v => Math.pow(10, +v - 1).toFixed(3) })}
+      </div>
+
+      <div class="param-group">
+        <h5>Train / Test Setup</h5>
+        ${paramRow({ skName: 'test_size', plain: 'Fraction held out', id: 'reg-test-size', min: 0.1, max: 0.5, step: 0.05, value: 0.3, fmt: v => (+v).toFixed(2) })}
+        <div class="split-strip" id="reg-split-strip"></div>
+      </div>
+
+      <div class="metrics-dash">
+        <h5>Model Performance</h5>
+        <div id="reg-metrics"></div>
+      </div>
+
+      <div class="narrative-box" id="reg-narrative">
+        <span class="nar-label">Status</span>Drag a data point or switch the regularization method.
+      </div>
+
+      <div class="compare-panel" id="reg-compare"></div>
+
+      <div class="action-row">
+        <button class="btn ghost" id="reg-reset">Reset points</button>
+        <button class="btn" id="reg-outlier">Add outlier</button>
+        <button class="btn ghost" id="reg-reshuffle">New train/test split</button>
+      </div>
+    </div>
+  `,
+  explanation: `
+    <p>Linear regression asks: what line best predicts the output from the inputs? "Best" for <strong>OLS</strong> means the sum of squared residuals is as small as possible. But unregularized OLS can produce wildly large coefficients when data is noisy or correlated, and any outlier can swing the whole line.</p>
+    <p><strong>Ridge (L2)</strong> adds a penalty proportional to the sum of squared coefficients. It shrinks coefficients toward zero but never to exactly zero. This is what scikit-learn's <code>Ridge</code> does. <strong>Lasso (L1)</strong> adds a penalty on the absolute value of coefficients, which can shrink them all the way to zero, so it performs feature selection automatically. The <code>alpha</code> parameter controls how strong the penalty is.</p>
+    <div class="callout">Try this: click "Add outlier" to drop one extreme point into the data. Switch to Ridge and drag alpha up, and watch the line become more resistant to that outlier. Compare against the dashed grey OLS line to see exactly how much regularization moved you.</div>
+    <p>For a Realtor: "Holding everything else constant, each additional square foot is associated with $X in price." That coefficient is the business deliverable, not the prediction itself. Ridge gives you more stable coefficients when features are correlated; Lasso picks a smaller subset.</p>
+  `,
+  uses: [
+    { domain: 'Real estate', example: 'Predicting home sale price from sqft, beds, location. Ridge stabilizes when features correlate.' },
+    { domain: 'Marketing mix', example: 'Attributing sales to TV, digital, radio, print. Lasso picks the channels that matter.' },
+    { domain: 'HR pay equity', example: 'Modeling salary vs. tenure, role, performance. OLS for interpretation, Ridge for prediction.' },
+    { domain: 'Finance', example: 'Revenue forecasting with many correlated leading indicators. Lasso selects the few that matter.' }
+  ],
+  wins: [
+    'Continuous target variable',
+    'Approximately linear relationships',
+    'Coefficients ARE the deliverable (stakeholder wants "why")',
+    'Regulated industries where every coefficient must be auditable'
+  ],
+  fails: [
+    'Target is categorical (use logistic regression)',
+    'Relationship is clearly non-linear (use trees or polynomial features)',
+    'Heavy multicollinearity among predictors (use Ridge, not OLS)',
+    'Outliers dominate the fit (use robust regression)'
+  ]
+});
+
+(function() {
+  const svg = document.getElementById('reg-svg');
+  const ptsG = document.getElementById('reg-points');
+  const resG = document.getElementById('reg-residuals');
+  const line = document.getElementById('reg-line');
+  const lineOls = document.getElementById('reg-line-ols');
+  const alphaSl = document.getElementById('reg-alpha');
+  const testSizeSl = document.getElementById('reg-test-size');
+  const metricsEl = document.getElementById('reg-metrics');
+  const narrativeEl = document.getElementById('reg-narrative');
+  const splitStripEl = document.getElementById('reg-split-strip');
+  const LEFT = 60, RIGHT = 540, TOP = 40, BOTTOM = 360;
+
+  let method = 'ols';
+  let points = [];
+  let trainIdx = new Set(), testIdx = new Set();
+
+  function initPoints() {
+    points = [];
+    for (let i = 0; i < 12; i++) {
+      const x = LEFT + 40 + i * 38 + (Math.random()-0.5)*15;
+      const trueY = BOTTOM - (x - LEFT) * 0.55 - 30 + (Math.random()-0.5)*50;
+      points.push({ x, y: trueY });
+    }
+  }
+
+  function resplit() {
+    const testFrac = parseFloat(testSizeSl.value);
+    const indices = Array.from(points.keys());
+    const shuffled = shuffle(indices);
+    const cut = Math.floor(shuffled.length * (1 - testFrac));
+    trainIdx = new Set(shuffled.slice(0, cut));
+    testIdx = new Set(shuffled.slice(cut));
+  }
+
+  // Normalize to standard scale for fitting so alpha has consistent effect
+  function getTrainData() {
+    return points.filter((_, i) => trainIdx.has(i));
+  }
+  function getTestData() {
+    return points.filter((_, i) => testIdx.has(i));
+  }
+
+  // Fit OLS, Ridge, or Lasso on training data
+  // For a single predictor (x -> y) with intercept
+  function fitRegression(data, methodName, alpha) {
+    const n = data.length;
+    if (n < 2) return { m: 0, b: 0 };
+
+    const xMean = data.reduce((s, p) => s + p.x, 0) / n;
+    const yMean = data.reduce((s, p) => s + p.y, 0) / n;
+
+    if (methodName === 'ols' || alpha === 0) {
+      let num = 0, den = 0;
+      data.forEach(p => {
+        num += (p.x - xMean) * (p.y - yMean);
+        den += (p.x - xMean) ** 2;
+      });
+      const m = den === 0 ? 0 : num / den;
+      const b = yMean - m * xMean;
+      return { m, b };
+    }
+
+    // Standardize x for regularization consistency
+    let xVar = 0;
+    data.forEach(p => xVar += (p.x - xMean) ** 2);
+    xVar /= n;
+    const xStd = Math.sqrt(xVar) || 1;
+
+    if (methodName === 'ridge') {
+      // Closed form with standardized x: m_std = sum((x-xbar)(y-ybar)) / (sum((x-xbar)^2) + alpha)
+      let num = 0, den = 0;
+      data.forEach(p => {
+        num += (p.x - xMean) * (p.y - yMean);
+        den += (p.x - xMean) ** 2;
+      });
+      const m = num / (den + alpha * xVar * n * 0.5);
+      const b = yMean - m * xMean;
+      return { m, b };
+    }
+
+    if (methodName === 'lasso') {
+      // Soft-thresholding on the OLS slope
+      let num = 0, den = 0;
+      data.forEach(p => {
+        num += (p.x - xMean) * (p.y - yMean);
+        den += (p.x - xMean) ** 2;
+      });
+      const olsM = den === 0 ? 0 : num / den;
+      // Soft-threshold proportional to alpha scaled by data magnitude
+      const threshold = alpha * xStd * 2;
+      let m;
+      if (olsM > threshold) m = olsM - threshold;
+      else if (olsM < -threshold) m = olsM + threshold;
+      else m = 0;
+      const b = yMean - m * xMean;
+      return { m, b };
+    }
+
+    return { m: 0, b: yMean };
+  }
+
+  function evalMetrics(data, model) {
+    if (data.length === 0) return { rmse: 0, mae: 0, r2: 0 };
+    const preds = data.map(p => model.m * p.x + model.b);
+    const truth = data.map(p => p.y);
+    return regMetrics(preds, truth);
+  }
+
+  function buildDOM() {
+    ptsG.innerHTML = '';
+    resG.innerHTML = '';
+    points.forEach((p, i) => {
+      const resLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      resLine.setAttribute('stroke', '#ff6b1a');
+      resLine.setAttribute('stroke-width', '1');
+      resLine.setAttribute('stroke-dasharray', '2,2');
+      resLine.setAttribute('opacity', '0.5');
+      resLine.dataset.i = i;
+      resG.appendChild(resLine);
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('r', '9');
+      circle.setAttribute('class', 'pt');
+      circle.dataset.i = i;
+      ptsG.appendChild(circle);
+
+      makeDraggable(circle, svg, (x, y) => {
+        points[i].x = Math.max(LEFT, Math.min(RIGHT, x));
+        points[i].y = Math.max(TOP, Math.min(BOTTOM, y));
+        redraw();
+      });
+    });
+  }
+
+  const tracker = new CompareTracker(
+    document.getElementById('reg-compare'),
+    [
+      { key: 'slope',    label: 'Slope (β)',    fmt: v => v.toFixed(3),             higherIsBetter: true },
+      { key: 'trainR2',  label: 'Train R²',     fmt: v => v.toFixed(3),             higherIsBetter: true },
+      { key: 'testR2',   label: 'Test R²',      fmt: v => v.toFixed(3),             higherIsBetter: true },
+      { key: 'testRmse', label: 'Test RMSE',    fmt: v => v.toFixed(1),             higherIsBetter: false }
+    ]
+  );
+
+  function redraw() {
+    const alpha = Math.pow(10, parseFloat(alphaSl.value) - 1);
+    document.getElementById('reg-alpha-v').textContent = alpha.toFixed(3);
+    document.getElementById('reg-test-size-v').textContent = parseFloat(testSizeSl.value).toFixed(2);
+
+    const train = getTrainData();
+    const test = getTestData();
+    const olsModel = fitRegression(train, 'ols', 0);
+    const model = fitRegression(train, method, alpha);
+
+    // Draw OLS reference line (always shown, dashed grey)
+    const yOls1 = olsModel.m * LEFT + olsModel.b;
+    const yOls2 = olsModel.m * RIGHT + olsModel.b;
+    lineOls.setAttribute('x1', LEFT);
+    lineOls.setAttribute('y1', Math.max(TOP - 20, Math.min(BOTTOM + 20, yOls1)));
+    lineOls.setAttribute('x2', RIGHT);
+    lineOls.setAttribute('y2', Math.max(TOP - 20, Math.min(BOTTOM + 20, yOls2)));
+    // Hide OLS reference when method is OLS (redundant)
+    lineOls.setAttribute('opacity', method === 'ols' ? 0 : 0.5);
+
+    // Draw the current model line
+    const y1 = model.m * LEFT + model.b;
+    const y2 = model.m * RIGHT + model.b;
+    line.setAttribute('x1', LEFT);
+    line.setAttribute('y1', Math.max(TOP - 20, Math.min(BOTTOM + 20, y1)));
+    line.setAttribute('x2', RIGHT);
+    line.setAttribute('y2', Math.max(TOP - 20, Math.min(BOTTOM + 20, y2)));
+
+    // Update points and residuals
+    const circles = ptsG.querySelectorAll('circle');
+    const resLines = resG.querySelectorAll('line');
+    points.forEach((p, i) => {
+      if (circles[i]) {
+        circles[i].setAttribute('cx', p.x);
+        circles[i].setAttribute('cy', p.y);
+        const isTest = testIdx.has(i);
+        circles[i].setAttribute('fill', isTest ? 'none' : '#102a56');
+        circles[i].setAttribute('stroke', isTest ? '#102a56' : 'none');
+        circles[i].setAttribute('stroke-width', isTest ? '2' : '0');
+        circles[i].setAttribute('opacity', '0.85');
+      }
+      if (resLines[i]) {
+        const predY = model.m * p.x + model.b;
+        resLines[i].setAttribute('x1', p.x);
+        resLines[i].setAttribute('y1', p.y);
+        resLines[i].setAttribute('x2', p.x);
+        resLines[i].setAttribute('y2', Math.max(TOP - 20, Math.min(BOTTOM + 20, predY)));
+        resLines[i].setAttribute('opacity', trainIdx.has(i) ? 0.5 : 0.2);
+      }
+    });
+
+    // Evaluate metrics
+    const trainMetrics = evalMetrics(train, model);
+    const testMetrics = evalMetrics(test, model);
+    const olsShift = Math.abs(model.m - olsModel.m);
+
+    // Metrics panel
+    const r2Tone = testMetrics.r2 > 0.7 ? 'good' : (testMetrics.r2 < 0.3 ? 'warn' : null);
+    const gap = trainMetrics.r2 - testMetrics.r2;
+    const gapTone = gap > 0.15 ? 'warn' : null;
+    renderMetricDash(metricsEl, [
+      { label: 'Slope (β)',    value: model.m.toFixed(3) },
+      { label: 'Intercept (α)', value: model.b.toFixed(0) },
+      { label: 'Train R²',     value: trainMetrics.r2.toFixed(3) },
+      { label: 'Test R²',      value: testMetrics.r2.toFixed(3), tone: r2Tone },
+      { label: 'Test RMSE',    value: testMetrics.rmse.toFixed(1) },
+      { label: 'Shrink vs OLS', value: olsShift.toFixed(3), tone: method !== 'ols' && olsShift > 0.1 ? 'highlight' : null }
+    ]);
+
+    renderSplitBar(splitStripEl, train.length, test.length);
+
+    // Narrative
+    if (method === 'lasso' && Math.abs(model.m) < 0.001) {
+      setNarrative(narrativeEl, {
+        label: 'Lasso feature selection',
+        text: `Lasso has zeroed the slope entirely. At alpha=${alpha.toFixed(2)}, the regularization penalty exceeds the signal strength. The model has decided this feature adds no value and set its coefficient to exactly 0. In a multi-feature model, this is automatic feature selection. Lower alpha to recover the coefficient.`,
+        tone: 'alert'
+      });
+    } else if (method !== 'ols' && olsShift > 0.2) {
+      setNarrative(narrativeEl, {
+        label: 'Regularization active',
+        text: `Your ${method.toUpperCase()} slope is ${Math.abs((1 - model.m/olsModel.m) * 100).toFixed(0)}% smaller than OLS. When data has outliers or features correlate, this shrinkage usually improves test-set performance. The dashed grey line shows where OLS would have placed it.`,
+        tone: 'success'
+      });
+    } else if (gap > 0.2) {
+      setNarrative(narrativeEl, {
+        label: 'Overfitting signal',
+        text: `Train R² (${trainMetrics.r2.toFixed(2)}) is much higher than test R² (${testMetrics.r2.toFixed(2)}). This is a classic overfitting pattern. Try Ridge or Lasso with higher alpha to shrink the coefficients and improve generalization.`,
+        tone: 'alert'
+      });
+    } else if (testMetrics.r2 > 0.8) {
+      setNarrative(narrativeEl, {
+        label: 'Good fit',
+        text: `Test R²=${testMetrics.r2.toFixed(2)} with ${method.toUpperCase()}${alpha > 0 ? ' (alpha=' + alpha.toFixed(2) + ')' : ''}. The line explains ${(testMetrics.r2*100).toFixed(0)}% of variance on held-out data.`,
+        tone: 'success'
+      });
+    } else if (testMetrics.r2 < 0.3) {
+      setNarrative(narrativeEl, {
+        label: 'Weak fit',
+        text: `Test R²=${testMetrics.r2.toFixed(2)} is low. Either the relationship is not linear, the noise dominates the signal, or one outlier is swinging the fit badly. Try adding an outlier with the button below, then switching to Ridge to see it resist.`,
+        tone: 'default'
+      });
+    } else {
+      setNarrative(narrativeEl, {
+        label: 'Status',
+        text: `${method.toUpperCase()}${alpha > 0 ? ', alpha=' + alpha.toFixed(2) : ''}. Slope ${model.m.toFixed(2)}, intercept ${model.b.toFixed(0)}, test R² ${testMetrics.r2.toFixed(2)}.`,
+        tone: 'default'
+      });
+    }
+
+    tracker.update({ slope: model.m, trainR2: trainMetrics.r2, testR2: testMetrics.r2, testRmse: testMetrics.rmse });
+  }
+
+  alphaSl.oninput = redraw;
+  testSizeSl.oninput = () => { resplit(); redraw(); };
+  wireSegToggle('reg-method', v => { method = v; redraw(); });
+
+  document.getElementById('reg-reset').onclick = () => {
+    initPoints(); buildDOM(); resplit(); tracker.reset(); redraw();
+  };
+  document.getElementById('reg-outlier').onclick = () => {
+    points.push({ x: 500, y: 70 });
+    buildDOM(); resplit(); redraw();
+  };
+  document.getElementById('reg-reshuffle').onclick = () => {
+    resplit(); redraw();
+  };
+
+  initPoints();
+  buildDOM();
+  resplit();
+  redraw();
+})();
+
+// ============================================================
+// LESSON: k-NN (Week 8)
+// ============================================================
+buildLesson('knn', {
+  week: 8,
+  chapter: 'Chapter 7 — k-Nearest Neighbors',
+  title: 'k-Nearest <em>Neighbors</em>',
+  tagline: 'Move the orange query point and adjust the real scikit-learn hyperparameters. See the decision boundary change with k, distance metric, and weighting, and watch what happens when you turn off feature scaling.',
+  hint: 'DRAG THE QUERY · TUNE n_neighbors · TRY TOGGLING SCALING',
+  vizHTML: `
+    <svg class="canvas" viewBox="0 0 600 420" id="knn-svg">
+      <g id="knn-boundary"></g>
+      <g id="knn-links"></g>
+      <g id="knn-train"></g>
+      <g id="knn-test"></g>
+      <circle id="knn-query" cx="300" cy="210" r="14" fill="#ff6b1a" stroke="#ffffff" stroke-width="3" class="pt"/>
+      <text x="545" y="375" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae">feature 1 →</text>
+      <text x="50" y="35" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae">feature 2 ↑</text>
+    </svg>
+    <div class="controls">
+      <div class="param-group">
+        <h5>k-NN Hyperparameters</h5>
+        ${paramRow({ skName: 'n_neighbors', plain: 'How many neighbors vote', id: 'knn-k', min: 1, max: 25, step: 2, value: 5, fmt: v => v })}
+        <div class="param-row">
+          <div class="param-label">
+            <span class="sk">weights</span>
+            <span class="plain">Vote weighting scheme</span>
+          </div>
+          ${segToggle({ id: 'knn-weights', options: [{value:'uniform', label:'uniform'}, {value:'distance', label:'distance'}], value: 'uniform' })}
+        </div>
+        <div class="param-row">
+          <div class="param-label">
+            <span class="sk">metric</span>
+            <span class="plain">Distance function</span>
+          </div>
+          ${segToggle({ id: 'knn-metric', options: [{value:'euclidean', label:'euclidean'}, {value:'manhattan', label:'manhattan'}, {value:'chebyshev', label:'chebyshev'}], value: 'euclidean' })}
+        </div>
+      </div>
+
+      <div class="param-group">
+        <h5>Preprocessing</h5>
+        <div class="param-row">
+          <div class="param-label">
+            <span class="sk">StandardScaler()</span>
+            <span class="plain">Feature scaling on/off</span>
+          </div>
+          ${segToggle({ id: 'knn-scale', options: [{value:'on', label:'On'}, {value:'off', label:'Off'}], value: 'on' })}
+        </div>
+        ${paramRow({ skName: 'feature_ratio', plain: 'Feature 1 scale vs feature 2', id: 'knn-ratio', min: 1, max: 10, step: 0.5, value: 1, fmt: v => (+v).toFixed(1) + '×' })}
+      </div>
+
+      <div class="param-group">
+        <h5>Train / Test Setup</h5>
+        ${paramRow({ skName: 'test_size', plain: 'Fraction held out', id: 'knn-test-size', min: 0.1, max: 0.5, step: 0.05, value: 0.3, fmt: v => (+v).toFixed(2) })}
+        <div class="split-strip" id="knn-split-strip"></div>
+      </div>
+
+      <div class="metrics-dash">
+        <h5>Live Performance</h5>
+        <div id="knn-metrics"></div>
+      </div>
+
+      <div class="narrative-box" id="knn-narrative">
+        <span class="nar-label">Status</span>Drag the query point or adjust hyperparameters.
+      </div>
+
+      <div class="compare-panel" id="knn-compare"></div>
+
+      <div class="action-row">
+        <button class="btn ghost" id="knn-reset">Reset to defaults</button>
+        <button class="btn ghost" id="knn-reshuffle">New train/test split</button>
+      </div>
+
+      <div style="font-family: var(--mono); font-size: 0.72rem; color: var(--ink-soft); background: var(--bg-panel); border: 1px solid var(--rule); padding: 0.55rem 0.7rem; border-radius: 4px; margin-top: 0.5rem;">
+        <strong>Query point prediction:</strong> <span id="knn-pred" style="color: var(--accent);">—</span>
+      </div>
+    </div>
+  `,
+  explanation: `
+    <p>k-NN is the laziest learner in ML: it does not build a model at all. To predict a new case, it finds the <em>n_neighbors</em> most similar training cases and takes a vote. The hyperparameters above match <code>sklearn.neighbors.KNeighborsClassifier</code>.</p>
+    <p><strong>n_neighbors</strong> is the bias-variance knob. With k=1 you get a jagged, overfitted boundary. With k=25 you get a smooth underfit. <strong>weights='distance'</strong> gives closer neighbors a stronger vote. <strong>metric</strong> changes how you measure "nearby". Manhattan treats diagonal movement as two separate steps, while Chebyshev only cares about the largest single-axis difference.</p>
+    <div class="callout">Try this: turn scaling Off and set feature_ratio to 10×. One feature now completely dominates the distance calculation, and k-NN silently collapses to a 1D classifier. This is the most common k-NN bug in production, and you can see it live here.</div>
+    <p>For a Realtor: "Here are the 5 most similar recent sales, and that is my price estimate." This is still how Zillow and Redfin generate their comp-based portions.</p>
+  `,
+  uses: [
+    { domain: 'Recommender systems', example: '"Customers like you also bought…" is literally k-NN on purchase vectors.' },
+    { domain: 'Real estate', example: 'Home price estimates from k most similar recent comparable sales.' },
+    { domain: 'Credit risk', example: 'Score a new applicant by outcomes of k most similar past applicants.' },
+    { domain: 'Retail', example: 'New SKU categorization based on nearest existing products by attributes.' }
+  ],
+  wins: [
+    'Irregular, non-linear decision boundaries',
+    'Small-to-medium datasets',
+    'The "here are similar cases" explanation is powerful for stakeholders',
+    'No training needed, fast to prototype'
+  ],
+  fails: [
+    'High-dimensional data, where distances collapse and everything looks equally far',
+    'Large datasets, where prediction is O(n) and does not scale',
+    'Imbalanced classes, where k-NN over-predicts the majority',
+    'Forgot to scale features (silent, catastrophic)'
+  ]
+});
+
+(function() {
+  const svg = document.getElementById('knn-svg');
+  const query = document.getElementById('knn-query');
+  const trainG = document.getElementById('knn-train');
+  const testG = document.getElementById('knn-test');
+  const linksG = document.getElementById('knn-links');
+  const boundaryG = document.getElementById('knn-boundary');
+  const kSlider = document.getElementById('knn-k');
+  const testSizeSl = document.getElementById('knn-test-size');
+  const ratioSl = document.getElementById('knn-ratio');
+  const predEl = document.getElementById('knn-pred');
+  const metricsEl = document.getElementById('knn-metrics');
+  const narrativeEl = document.getElementById('knn-narrative');
+  const splitStripEl = document.getElementById('knn-split-strip');
+
+  let weights = 'uniform';
+  let metric = 'euclidean';
+  let scaling = 'on';
+  let allPts = [];
+  let train = [], test = [];
+  let seed = 11;
+
+  function generate() {
+    const rng = (() => { let s = seed; return () => { s = (s*1664525+1013904223)%4294967296; return s/4294967296; }; })();
+    const gauss = () => {
+      let u = 0, v = 0;
+      while (u === 0) u = rng(); while (v === 0) v = rng();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    };
+    allPts = [];
+    for (let i = 0; i < 28; i++) {
+      allPts.push({ x: 200 + gauss() * 50, y: 170 + gauss() * 55, cls: 'A' });
+    }
+    for (let i = 0; i < 28; i++) {
+      allPts.push({ x: 400 + gauss() * 50, y: 250 + gauss() * 55, cls: 'B' });
+    }
+    allPts.forEach(p => {
+      p.x = Math.max(75, Math.min(525, p.x));
+      p.y = Math.max(55, Math.min(345, p.y));
+    });
+  }
+
+  function resplit() {
+    const testFrac = parseFloat(testSizeSl.value);
+    const shuf = shuffle(allPts);
+    const cut = Math.floor(shuf.length * (1 - testFrac));
+    train = shuf.slice(0, cut);
+    test = shuf.slice(cut);
+  }
+
+  // Scaled coordinates for distance calculation
+  // When scaling off + feature_ratio high, feature 1 dominates
+  function scaledCoords(pt) {
+    const ratio = parseFloat(ratioSl.value);
+    if (scaling === 'on') {
+      // Standardize both features to roughly unit scale
+      return { x: (pt.x - 300) / 100, y: (pt.y - 210) / 80 };
+    } else {
+      // Leave features on their raw scale, and stretch feature 1 by the ratio
+      return { x: (pt.x - 300) * ratio, y: (pt.y - 210) };
+    }
+  }
+
+  function dist(a, b) {
+    const sa = scaledCoords(a), sb = scaledCoords(b);
+    const dx = Math.abs(sa.x - sb.x), dy = Math.abs(sa.y - sb.y);
+    if (metric === 'manhattan') return dx + dy;
+    if (metric === 'chebyshev') return Math.max(dx, dy);
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+
+  function predict(pt, pool) {
+    const k = parseInt(kSlider.value);
+    const ranked = pool.map(p => ({ ...p, d: dist(pt, p) }))
+                       .sort((a, b) => a.d - b.d)
+                       .slice(0, k);
+    if (weights === 'uniform') {
+      const vA = ranked.filter(r => r.cls === 'A').length;
+      const vB = k - vA;
+      return { cls: vA >= vB ? 'A' : 'B', vA, vB, ranked };
+    } else {
+      // distance weighting: contribute 1/(d+eps)
+      let wA = 0, wB = 0;
+      ranked.forEach(r => {
+        const w = 1 / (r.d + 0.001);
+        if (r.cls === 'A') wA += w; else wB += w;
+      });
+      return { cls: wA >= wB ? 'A' : 'B', vA: wA.toFixed(1), vB: wB.toFixed(1), ranked };
+    }
+  }
+
+  const tracker = new CompareTracker(
+    document.getElementById('knn-compare'),
+    [
+      { key: 'trainAcc', label: 'Train accuracy', fmt: v => (v*100).toFixed(1) + '%', higherIsBetter: true },
+      { key: 'testAcc',  label: 'Test accuracy',  fmt: v => (v*100).toFixed(1) + '%', higherIsBetter: true },
+      { key: 'gap',      label: 'Gap (overfit)',  fmt: v => (v*100).toFixed(1) + ' pp', higherIsBetter: false },
+      { key: 'f1',       label: 'F1 (test)',      fmt: v => v.toFixed(3),              higherIsBetter: true }
+    ]
+  );
+
+  function render(qx, qy) {
+    const k = parseInt(kSlider.value);
+    document.getElementById('knn-k-v').textContent = k;
+    document.getElementById('knn-test-size-v').textContent = parseFloat(testSizeSl.value).toFixed(2);
+    document.getElementById('knn-ratio-v').textContent = parseFloat(ratioSl.value).toFixed(1) + '×';
+
+    // Decision boundary grid — only against TRAIN set
+    const grid = [];
+    for (let gx = 20; gx < 580; gx += 20) {
+      for (let gy = 20; gy < 400; gy += 20) {
+        const res = predict({ x: gx, y: gy }, train);
+        const col = res.cls === 'A' ? '#1fa85a' : '#2557c7';
+        const margin = weights === 'uniform'
+          ? Math.abs(res.vA - res.vB) / k
+          : Math.abs(res.vA - res.vB) / (Number(res.vA) + Number(res.vB) + 0.001);
+        const op = margin * 0.18 + 0.05;
+        grid.push(`<rect x="${gx-10}" y="${gy-10}" width="20" height="20" fill="${col}" opacity="${op}"/>`);
+      }
+    }
+    boundaryG.innerHTML = grid.join('');
+
+    // Train points (solid), test points (ring)
+    trainG.innerHTML = train.map(p =>
+      `<circle cx="${p.x}" cy="${p.y}" r="4.5" fill="${p.cls === 'A' ? '#1fa85a' : '#2557c7'}" opacity="0.85"/>`
+    ).join('');
+    testG.innerHTML = test.map(p =>
+      `<circle cx="${p.x}" cy="${p.y}" r="5.5" fill="none" stroke="${p.cls === 'A' ? '#1fa85a' : '#2557c7'}" stroke-width="2"/>`
+    ).join('');
+
+    // Query prediction + links to its k neighbors
+    const queryResult = predict({ x: qx, y: qy }, train);
+    predEl.textContent = `Class ${queryResult.cls}  (${queryResult.vA} vs ${queryResult.vB})`;
+    predEl.style.color = queryResult.cls === 'A' ? '#1fa85a' : '#2557c7';
+    linksG.innerHTML = queryResult.ranked.map(p =>
+      `<line x1="${qx}" y1="${qy}" x2="${p.x}" y2="${p.y}"
+             stroke="${p.cls === 'A' ? '#1fa85a' : '#2557c7'}"
+             stroke-width="1.3" opacity="0.5"/>`
+    ).join('');
+
+    // Metrics: evaluate model on train and test sets
+    const trainPreds = train.map(p => predict(p, train.filter(x => x !== p)).cls === 'A' ? 1 : 0);
+    const trainTruth = train.map(p => p.cls === 'A' ? 1 : 0);
+    const testPreds = test.map(p => predict(p, train).cls === 'A' ? 1 : 0);
+    const testTruth = test.map(p => p.cls === 'A' ? 1 : 0);
+    const trainM = classMetrics(trainPreds, trainTruth);
+    const testM = classMetrics(testPreds, testTruth);
+    const gap = trainM.acc - testM.acc;
+
+    const gapTone = gap > 0.10 ? 'warn' : (gap < 0.03 ? 'good' : null);
+    renderMetricDash(metricsEl, [
+      { label: 'Train acc', value: (trainM.acc * 100).toFixed(1) + '%' },
+      { label: 'Test acc',  value: (testM.acc  * 100).toFixed(1) + '%', tone: testM.acc > 0.85 ? 'good' : (testM.acc < 0.65 ? 'warn' : null) },
+      { label: 'Train-test gap', value: (gap * 100).toFixed(1) + ' pp', tone: gapTone },
+      { label: 'Precision', value: (testM.prec * 100).toFixed(0) + '%' },
+      { label: 'Recall',    value: (testM.rec  * 100).toFixed(0) + '%' },
+      { label: 'F1',        value: testM.f1.toFixed(3) }
+    ]);
+
+    renderSplitBar(splitStripEl, train.length, test.length);
+
+    // Narrative
+    if (scaling === 'off' && parseFloat(ratioSl.value) > 3) {
+      setNarrative(narrativeEl, {
+        label: 'Scaling warning',
+        text: `Feature 1 scale is ${parseFloat(ratioSl.value).toFixed(1)}× feature 2, but scaling is off. k-NN is silently using feature 1 almost exclusively, making the boundary essentially vertical. This is the #1 production bug in k-NN.`,
+        tone: 'alert'
+      });
+    } else if (k === 1 && gap > 0.08) {
+      setNarrative(narrativeEl, {
+        label: 'Overfitting',
+        text: `k=1 means every training point gets its own little neighborhood. Train accuracy is artificially inflated. Raising k trades training fit for better generalization.`,
+        tone: 'alert'
+      });
+    } else if (k > 15 && testM.acc < 0.75) {
+      setNarrative(narrativeEl, {
+        label: 'Underfitting',
+        text: `k=${k} is so large that the boundary has gotten too smooth. Each prediction averages over too much of the dataset. Try a smaller k.`,
+        tone: 'alert'
+      });
+    } else if (gap < 0.04 && testM.acc > 0.85) {
+      setNarrative(narrativeEl, {
+        label: 'Good fit',
+        text: `k=${k}, ${weights}, ${metric}. Train and test accuracy are close and both strong. This is the generalization sweet spot.`,
+        tone: 'success'
+      });
+    } else if (metric === 'manhattan' && testM.acc > 0.8) {
+      setNarrative(narrativeEl, {
+        label: 'Manhattan distance',
+        text: `Manhattan (L1) distance treats diagonal movement as two axis-aligned steps. It tends to create boxier boundaries and is often more robust to outliers than Euclidean.`,
+        tone: 'default'
+      });
+    } else {
+      setNarrative(narrativeEl, {
+        label: 'Status',
+        text: `k=${k}, weights=${weights}, metric=${metric}. Train ${(trainM.acc*100).toFixed(0)}%, test ${(testM.acc*100).toFixed(0)}%.`,
+        tone: 'default'
+      });
+    }
+
+    tracker.update({ trainAcc: trainM.acc, testAcc: testM.acc, gap, f1: testM.f1 });
+  }
+
+  makeDraggable(query, svg, (x, y) => {
+    query.setAttribute('cx', x);
+    query.setAttribute('cy', y);
+    render(x, y);
+  });
+
+  function redrawWithCurrentQuery() {
+    render(parseFloat(query.getAttribute('cx')), parseFloat(query.getAttribute('cy')));
+  }
+
+  [kSlider, ratioSl].forEach(s => s.oninput = redrawWithCurrentQuery);
+  testSizeSl.oninput = () => { resplit(); redrawWithCurrentQuery(); };
+  wireSegToggle('knn-weights', v => { weights = v; redrawWithCurrentQuery(); });
+  wireSegToggle('knn-metric', v => { metric = v; redrawWithCurrentQuery(); });
+  wireSegToggle('knn-scale', v => { scaling = v; redrawWithCurrentQuery(); });
+
+  document.getElementById('knn-reset').onclick = () => {
+    kSlider.value = 5;
+    testSizeSl.value = 0.3;
+    ratioSl.value = 1;
+    weights = 'uniform'; metric = 'euclidean'; scaling = 'on';
+    document.querySelectorAll('#knn-weights button').forEach(b => b.classList.toggle('active', b.dataset.val === 'uniform'));
+    document.querySelectorAll('#knn-metric button').forEach(b => b.classList.toggle('active', b.dataset.val === 'euclidean'));
+    document.querySelectorAll('#knn-scale button').forEach(b => b.classList.toggle('active', b.dataset.val === 'on'));
+    tracker.reset();
+    resplit();
+    redrawWithCurrentQuery();
+  };
+  document.getElementById('knn-reshuffle').onclick = () => {
+    seed = (seed * 13 + 7) % 997;
+    generate();
+    resplit();
+    redrawWithCurrentQuery();
+  };
+
+  generate();
+  resplit();
+  render(300, 210);
+})();
+
+// ============================================================
+// LESSON: NAIVE BAYES (Week 9)
+// ============================================================
+buildLesson('nb', {
+  week: 9,
+  chapter: 'Chapter 8 — Naive Bayes Classifier',
+  title: 'Naive <em>Bayes</em>',
+  tagline: 'A tiny spam filter. Click words to build an email and see how Bayes rule computes the spam probability. Then tune the real scikit-learn hyperparameters, especially alpha, the Laplace smoothing knob that fixes the famous zero-probability bug.',
+  hint: 'CLICK WORDS · TUNE alpha · TRY A WORD THAT HAS NEVER APPEARED IN SPAM',
+  vizHTML: `
+    <svg class="canvas" viewBox="0 0 600 420" id="nb-svg" style="cursor: default;">
+      <text x="300" y="30" text-anchor="middle" font-family="DM Serif Display" font-size="14" fill="#102a56" font-style="italic">Click words to build your email:</text>
+      <g id="nb-words"></g>
+      <g id="nb-gauge">
+        <rect x="60" y="290" width="480" height="40" fill="#eff5ff" stroke="#c8d8ec"/>
+        <rect id="nb-gauge-fill" x="60" y="290" width="0" height="40" fill="#ff6b1a" opacity="0.35"/>
+        <line x1="300" y1="285" x2="300" y2="335" stroke="#6d82ae" stroke-dasharray="3,3"/>
+        <text x="300" y="350" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae">P = 0.5</text>
+        <text x="60" y="350" font-family="IBM Plex Mono" font-size="10" fill="#1fa85a" font-weight="600">HAM</text>
+        <text x="540" y="350" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#ff6b1a" font-weight="600">SPAM</text>
+      </g>
+      <!-- Log-odds breakdown -->
+      <text x="60" y="375" font-family="IBM Plex Mono" font-size="9" fill="#6d82ae">Log-likelihood breakdown:</text>
+      <text x="60" y="395" font-family="IBM Plex Mono" font-size="10" fill="#1fa85a">log P(email | HAM) = <tspan id="nb-loghamval" font-weight="600">—</tspan></text>
+      <text x="60" y="411" font-family="IBM Plex Mono" font-size="10" fill="#ff6b1a">log P(email | SPAM) = <tspan id="nb-logspamval" font-weight="600">—</tspan></text>
+    </svg>
+    <div class="controls">
+      <div class="param-group">
+        <h5>Naive Bayes Hyperparameters</h5>
+        ${paramRow({ skName: 'alpha', plain: 'Laplace smoothing strength', id: 'nb-alpha', min: 0, max: 5, step: 0.1, value: 1, fmt: v => (+v).toFixed(1) })}
+        <div class="param-row">
+          <div class="param-label">
+            <span class="sk">fit_prior</span>
+            <span class="plain">Learn class prior from data</span>
+          </div>
+          ${segToggle({ id: 'nb-prior', options: [{value:'true', label:'True'}, {value:'false', label:'False (uniform)'}], value: 'true' })}
+        </div>
+        ${paramRow({ skName: 'class_prior', plain: 'Spam frequency in training data', id: 'nb-spam-rate', min: 0.1, max: 0.9, step: 0.05, value: 0.5, fmt: v => (+v*100).toFixed(0) + '%' })}
+      </div>
+
+      <div class="param-group">
+        <h5>Include a Rare Word</h5>
+        <div class="param-row">
+          <div class="param-label">
+            <span class="sk">unseen_word</span>
+            <span class="plain">Add a word that never appeared in spam</span>
+          </div>
+          ${segToggle({ id: 'nb-unseen', options: [{value:'no', label:'No'}, {value:'yes', label:'Yes ("quarterly")'}], value: 'no' })}
+        </div>
+        <div style="font-family: var(--mono); font-size: 0.66rem; color: var(--ink-mute); margin-top: 0.35rem;">
+          With alpha=0, an unseen word crashes the probability to 0. Try it.
+        </div>
+      </div>
+
+      <div class="metrics-dash">
+        <h5>Prediction</h5>
+        <div id="nb-metrics"></div>
+      </div>
+
+      <div class="narrative-box" id="nb-narrative">
+        <span class="nar-label">Status</span>Click some words to classify an email.
+      </div>
+
+      <div class="compare-panel" id="nb-compare"></div>
+
+      <div class="action-row">
+        <button class="btn ghost" id="nb-reset">Reset</button>
+        <button class="btn ghost" id="nb-clear">Clear email</button>
+      </div>
+    </div>
+  `,
+  explanation: `
+    <p>Naive Bayes uses Bayes' theorem to compute <code>P(spam | words)</code> from each word's learned likelihoods. The "naive" part: it assumes every word's presence is independent of every other word's. That is obviously false, and yet it works surprisingly well.</p>
+    <p><strong>alpha</strong> is the single most important hyperparameter and it exists to fix a real bug. With alpha=0, if a word has never been seen in spam training data, its probability is exactly zero. Multiplying by zero makes the entire email probability zero, no matter what the other words say. Laplace smoothing (alpha > 0) adds a small pseudo-count to every word, preventing these collapses. <strong>Try it:</strong> set alpha=0, click "quarterly" (an unseen-in-spam word), and watch the spam probability drop to 0% even if you click every spam word.</p>
+    <div class="callout">The first real Gmail spam filter was essentially this. Tiny model. Fast training. Hard to beat on short text. It taught the whole field that simple, theoretically-wrong models often win in practice.</div>
+    <p>The <strong>fit_prior</strong> toggle shows a subtler effect: if your training data is 95% ham and 5% spam, a uniform prior overweights spam and gives too many false positives. Learning the prior from data is almost always right.</p>
+  `,
+  uses: [
+    { domain: 'Email / spam', example: 'The original killer app. Multinomial Naive Bayes on word counts.' },
+    { domain: 'Sentiment analysis', example: 'Classifying product reviews from word frequencies.' },
+    { domain: 'Support tickets', example: 'Routing billing vs technical vs account tickets to the right team.' },
+    { domain: 'Medical triage', example: 'Fast, low-compute models when speed matters more than calibration.' }
+  ],
+  wins: [
+    'Text classification, especially with large vocabularies',
+    'Very large feature spaces, small sample sizes',
+    'Need probability outputs and very fast training/inference',
+    'Streaming or online learning contexts'
+  ],
+  fails: [
+    'Features are strongly dependent (the independence assumption fails)',
+    'Continuous features far from Gaussian',
+    'Need well-calibrated probabilities (NB is often overconfident)',
+    'Small datasets where independence assumption wastes signal'
+  ]
+});
+
+(function() {
+  const wordsG = document.getElementById('nb-words');
+  const fillEl = document.getElementById('nb-gauge-fill');
+  const logHamEl = document.getElementById('nb-loghamval');
+  const logSpamEl = document.getElementById('nb-logspamval');
+  const metricsEl = document.getElementById('nb-metrics');
+  const narrativeEl = document.getElementById('nb-narrative');
+  const alphaSl = document.getElementById('nb-alpha');
+  const spamRateSl = document.getElementById('nb-spam-rate');
+  const unseenSl = document.getElementById('nb-unseen');
+
+  let fitPrior = 'true';
+
+  // Word counts as if from a training corpus of ~200 emails
+  // (spamCount, hamCount) — totals: spam ~100 emails, ham ~100 emails
+  // spam emails have total ~1500 words, ham emails total ~1500 words
+  const baseWords = [
+    { w: 'free',      spam: 130, ham: 6,   loc: 'spam' },
+    { w: 'meeting',   spam: 3,   ham: 110, loc: 'ham' },
+    { w: 'winner',    spam: 95,  ham: 2,   loc: 'spam' },
+    { w: 'project',   spam: 8,   ham: 115, loc: 'ham' },
+    { w: 'click',     spam: 105, ham: 12,  loc: 'spam' },
+    { w: 'report',    spam: 5,   ham: 90,  loc: 'ham' },
+    { w: 'urgent',    spam: 80,  ham: 25,  loc: 'mid' },
+    { w: 'deadline',  spam: 14,  ham: 65,  loc: 'ham' },
+    { w: 'prize',     spam: 110, ham: 1,   loc: 'spam' },
+    { w: 'team',      spam: 7,   ham: 100, loc: 'ham' },
+    { w: 'discount',  spam: 88,  ham: 11,  loc: 'spam' },
+    { w: 'review',    spam: 16,  ham: 55,  loc: 'ham' }
+  ];
+  // Totals from these counts
+  const baseSpamTotal = baseWords.reduce((s, w) => s + w.spam, 0);
+  const baseHamTotal = baseWords.reduce((s, w) => s + w.ham, 0);
+  // The "unseen" word that has zero spam count
+  const unseenWord = { w: 'quarterly', spam: 0, ham: 22, loc: 'unseen' };
+
+  const selected = new Set();
+
+  function renderWords() {
+    const cols = 4, rowH = 50, colW = 120, startX = 60, startY = 50;
+    const unseen = unseenSl && document.querySelector('#nb-unseen button.active')?.dataset.val === 'yes';
+    const wordList = unseen ? [...baseWords, unseenWord] : baseWords;
+
+    wordsG.innerHTML = wordList.map((wd, i) => {
+      const r = Math.floor(i / cols), c = i % cols;
+      const x = startX + c * colW, y = startY + r * rowH;
+      const on = selected.has(wd.w);
+      const isUnseen = wd.loc === 'unseen';
+      let bg = '#ffffff', border = '#c8d8ec', txtColor = '#102a56';
+      if (on) {
+        if (isUnseen) { bg = '#e63946'; border = '#e63946'; txtColor = '#ffffff'; }
+        else { bg = '#102a56'; border = '#102a56'; txtColor = '#ffffff'; }
+      } else if (isUnseen) {
+        border = '#e63946';
+      }
+      return `
+        <g data-w="${wd.w}" style="cursor: pointer;">
+          <rect x="${x}" y="${y}" width="${colW-12}" height="36"
+                rx="4" fill="${bg}" stroke="${border}" stroke-width="${isUnseen ? 1.5 : 1}"/>
+          <text x="${x + (colW-12)/2}" y="${y+22}" text-anchor="middle"
+                font-family="DM Serif Display" font-size="14" fill="${txtColor}">${wd.w}</text>
+        </g>
+      `;
+    }).join('');
+
+    wordsG.querySelectorAll('g').forEach(g => {
+      g.onclick = () => {
+        const wName = g.dataset.w;
+        if (selected.has(wName)) selected.delete(wName); else selected.add(wName);
+        renderWords();
+        compute();
+      };
+    });
+  }
+
+  const tracker = new CompareTracker(
+    document.getElementById('nb-compare'),
+    [
+      { key: 'pSpam',   label: 'P(spam)',        fmt: v => (v*100).toFixed(1) + '%', higherIsBetter: true },
+      { key: 'logRatio', label: 'log-odds ratio', fmt: v => v.toFixed(2),             higherIsBetter: true }
+    ]
+  );
+
+  function compute() {
+    const alpha = parseFloat(alphaSl.value);
+    const spamRate = parseFloat(spamRateSl.value);
+    const unseenOn = document.querySelector('#nb-unseen button.active')?.dataset.val === 'yes';
+    const vocab = unseenOn ? [...baseWords, unseenWord] : baseWords;
+    const V = vocab.length;
+    const spamTotal = baseSpamTotal + (unseenOn ? 0 : 0);
+    const hamTotal = baseHamTotal + (unseenOn ? unseenWord.ham : 0);
+
+    document.getElementById('nb-alpha-v').textContent = alpha.toFixed(1);
+    document.getElementById('nb-spam-rate-v').textContent = (spamRate*100).toFixed(0) + '%';
+
+    // P(word | class) with Laplace smoothing
+    // p(w|c) = (count_wc + alpha) / (total_c + alpha * V)
+    function pWordGivenClass(word, cls) {
+      const count = cls === 'spam' ? word.spam : word.ham;
+      const total = cls === 'spam' ? spamTotal : hamTotal;
+      const num = count + alpha;
+      const den = total + alpha * V;
+      if (den === 0) return 0;
+      return num / den;
+    }
+
+    if (selected.size === 0) {
+      fillEl.setAttribute('width', 0);
+      logHamEl.textContent = '—';
+      logSpamEl.textContent = '—';
+      renderMetricDash(metricsEl, [
+        { label: 'P(spam)', value: '—' },
+        { label: 'Prediction', value: '—' },
+        { label: '# words', value: '0' }
+      ]);
+      setNarrative(narrativeEl, {
+        label: 'Awaiting email',
+        text: 'Click some words above to build an email. Try a mix of spam indicators (free, winner, prize, click) and ham indicators (meeting, project, team).',
+        tone: 'default'
+      });
+      return;
+    }
+
+    // Prior
+    const priorSpam = fitPrior === 'true' ? spamRate : 0.5;
+    const priorHam = 1 - priorSpam;
+
+    let logSpam = Math.log(priorSpam);
+    let logHam = Math.log(priorHam);
+
+    const selectedWords = vocab.filter(w => selected.has(w.w));
+    let zeroCollapse = false;
+    selectedWords.forEach(wd => {
+      const pS = pWordGivenClass(wd, 'spam');
+      const pH = pWordGivenClass(wd, 'ham');
+      if (pS === 0 || pH === 0) zeroCollapse = true;
+      logSpam += Math.log(Math.max(pS, 1e-300));
+      logHam += Math.log(Math.max(pH, 1e-300));
+    });
+
+    // Normalize
+    const mx = Math.max(logSpam, logHam);
+    const eS = Math.exp(logSpam - mx);
+    const eH = Math.exp(logHam - mx);
+    const pSpam = eS / (eS + eH);
+
+    // Update gauge
+    fillEl.setAttribute('width', 480 * pSpam);
+    logHamEl.textContent = logHam.toFixed(2);
+    logSpamEl.textContent = logSpam.toFixed(2);
+
+    const prediction = pSpam > 0.5 ? 'SPAM' : 'HAM';
+    const confidence = Math.abs(pSpam - 0.5) * 2;
+
+    // Metrics
+    const confTone = confidence > 0.9 ? 'good' : (confidence < 0.3 ? 'warn' : null);
+    const logRatio = logSpam - logHam;
+    renderMetricDash(metricsEl, [
+      { label: 'P(spam)', value: (pSpam*100).toFixed(1) + '%' },
+      { label: 'Prediction', value: prediction, tone: prediction === 'SPAM' ? 'warn' : 'good' },
+      { label: 'log-odds ratio', value: logRatio.toFixed(2) },
+      { label: '# words', value: String(selected.size) },
+      { label: 'Confidence', value: (confidence*100).toFixed(0) + '%', tone: confTone }
+    ]);
+
+    // Narrative
+    if (zeroCollapse && alpha === 0) {
+      setNarrative(narrativeEl, {
+        label: 'Zero-probability collapse',
+        text: `One of your selected words has zero training-set occurrences in one class. With alpha=0, that collapses the entire likelihood to zero. Raise alpha even a tiny amount (0.1 is fine) and watch the probability become sensible again.`,
+        tone: 'alert'
+      });
+    } else if (alpha > 3) {
+      setNarrative(narrativeEl, {
+        label: 'Over-smoothed',
+        text: `alpha=${alpha.toFixed(1)} is so high that every word looks similar across classes. The model has lost most of its signal. Try alpha=1 (standard Laplace) for a sensible default.`,
+        tone: 'alert'
+      });
+    } else if (fitPrior === 'false' && Math.abs(spamRate - 0.5) > 0.15) {
+      setNarrative(narrativeEl, {
+        label: 'Prior mismatch',
+        text: `Your training data is ${(spamRate*100).toFixed(0)}% spam, but fit_prior=False forces a uniform 50/50 prior. The model will be systematically biased. Almost always, fit_prior=True is the right setting.`,
+        tone: 'alert'
+      });
+    } else if (confidence > 0.95) {
+      setNarrative(narrativeEl, {
+        label: 'Confident ' + prediction,
+        text: `P(spam)=${(pSpam*100).toFixed(1)}% with a log-odds ratio of ${logRatio.toFixed(1)}. Naive Bayes tends to be overconfident, which is usually fine for the classification decision but be wary of quoting the raw probability.`,
+        tone: 'success'
+      });
+    } else if (confidence < 0.3) {
+      setNarrative(narrativeEl, {
+        label: 'Uncertain',
+        text: `P(spam)=${(pSpam*100).toFixed(1)}%. Your selected words pull in roughly equal directions. Real spam filters set a threshold that favors caution (not marking borderline as spam).`,
+        tone: 'default'
+      });
+    } else {
+      setNarrative(narrativeEl, {
+        label: 'Classification',
+        text: `${prediction} with P(spam)=${(pSpam*100).toFixed(1)}%. alpha=${alpha.toFixed(1)}, prior spam=${(priorSpam*100).toFixed(0)}%.`,
+        tone: 'default'
+      });
+    }
+
+    tracker.update({ pSpam, logRatio });
+  }
+
+  alphaSl.oninput = compute;
+  spamRateSl.oninput = compute;
+  wireSegToggle('nb-prior', v => { fitPrior = v; compute(); });
+  wireSegToggle('nb-unseen', () => { renderWords(); compute(); });
+
+  document.getElementById('nb-reset').onclick = () => {
+    alphaSl.value = 1; spamRateSl.value = 0.5;
+    fitPrior = 'true';
+    document.querySelectorAll('#nb-prior button').forEach(b => b.classList.toggle('active', b.dataset.val === 'true'));
+    document.querySelectorAll('#nb-unseen button').forEach(b => b.classList.toggle('active', b.dataset.val === 'no'));
+    selected.clear();
+    tracker.reset();
+    renderWords(); compute();
+  };
+  document.getElementById('nb-clear').onclick = () => {
+    selected.clear();
+    renderWords(); compute();
+  };
+
+  renderWords();
+  compute();
+})();
+
+
+buildLesson('tree', {
+  week: 10,
+  chapter: 'Chapter 9 — Classification and Regression Trees',
+  title: 'Decision <em>Trees</em>',
+  tagline: 'A loan approval classifier. Tune the real hyperparameters scikit-learn exposes and watch the tree change, then compare train accuracy against test accuracy to catch overfitting as it happens.',
+  hint: 'TUNE HYPERPARAMETERS · WATCH OVERFITTING IN REAL TIME',
+  vizHTML: `
+    <svg class="canvas" viewBox="0 0 600 420" id="tree-svg">
+      <g id="tree-regions"></g>
+      <g id="tree-test-points"></g>
+      <g id="tree-train-points"></g>
+      <line x1="60" y1="360" x2="540" y2="360" stroke="#c8d8ec"/>
+      <line x1="60" y1="40" x2="60" y2="360" stroke="#c8d8ec"/>
+      <text x="545" y="375" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae">income →</text>
+      <text x="50" y="35" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae">debt ratio ↑</text>
+    </svg>
+    <div class="controls">
+      <div class="param-group">
+        <h5>Tree Hyperparameters</h5>
+        ${paramRow({ skName: 'max_depth', plain: 'Deepest level of splits allowed', id: 'tree-max-depth', min: 1, max: 10, value: 3, fmt: v => v })}
+        ${paramRow({ skName: 'min_samples_split', plain: 'Smallest group still worth splitting', id: 'tree-min-split', min: 2, max: 30, value: 5, fmt: v => v })}
+        ${paramRow({ skName: 'min_samples_leaf', plain: 'Minimum group size at a leaf', id: 'tree-min-leaf', min: 1, max: 20, value: 2, fmt: v => v })}
+        <div class="param-row">
+          <div class="param-label">
+            <span class="sk">criterion</span>
+            <span class="plain">Split quality measure</span>
+          </div>
+          ${segToggle({ id: 'tree-criterion', options: [{value:'gini', label:'gini'}, {value:'entropy', label:'entropy'}], value: 'gini' })}
+        </div>
+      </div>
+
+      <div class="param-group">
+        <h5>Train / Test Setup</h5>
+        ${paramRow({ skName: 'test_size', plain: 'Fraction held out for testing', id: 'tree-test-size', min: 0.1, max: 0.5, step: 0.05, value: 0.3, fmt: v => (+v).toFixed(2) })}
+        <div class="split-strip" id="tree-split-strip"></div>
+      </div>
+
+      <div class="metrics-dash">
+        <h5>Live Performance</h5>
+        <div id="tree-metrics"></div>
+      </div>
+
+      <div class="narrative-box" id="tree-narrative">
+        <span class="nar-label">Diagnosis</span>Adjust a slider to see model behavior.
+      </div>
+
+      <div class="compare-panel" id="tree-compare"></div>
+
+      <div class="action-row">
+        <button class="btn ghost" id="tree-reset">Reset to defaults</button>
+        <button class="btn ghost" id="tree-reshuffle">New train/test split</button>
+      </div>
+
+      <div id="tree-rules" style="font-family: var(--mono); font-size: 0.7rem; color: var(--ink-soft); background: var(--bg-panel); border: 1px solid var(--rule); padding: 0.6rem 0.7rem; border-radius: 4px; min-height: 44px; white-space: pre-line; margin-top: 0.55rem;">
+        Rules will appear here…
+      </div>
+    </div>
+  `,
+  explanation: `
+    <p>A decision tree keeps splitting the data into smaller groups until each group is mostly one class. Every split is a rule like "IF income > $50k THEN look at debt; ELSE decline."</p>
+    <p>The hyperparameters above map directly to scikit-learn's <code>DecisionTreeClassifier</code>. Students can now see firsthand why <code>max_depth</code> alone is rarely enough to control overfitting. Increasing <code>max_depth</code> past a certain point grows the train-test accuracy gap without improving test performance. That is the classic overfitting signal.</p>
+    <div class="callout">This is why trees are the darling of regulated industries. Every prediction comes with a literal path of rules an auditor can read and challenge. No other ML method offers this.</div>
+    <p>Try this: set max_depth to 10 with min_samples_leaf=1 and watch the train accuracy shoot up while test accuracy stays flat or drops. Now raise min_samples_leaf to 5 and watch both numbers move toward each other. That gap between train and test is everything.</p>
+  `,
+  uses: [
+    { domain: 'Credit underwriting', example: 'Literal IF-THEN rules needed for regulators.' },
+    { domain: 'Healthcare triage', example: 'Emergency-room protocols match the tree structure naturally.' },
+    { domain: 'Customer segmentation', example: 'Named, rule-based segments that business teams can act on.' },
+    { domain: 'Fraud investigation', example: 'Analysts follow the exact path the tree took on a flagged transaction.' }
+  ],
+  wins: [
+    'Interpretability is non-negotiable (banking, healthcare, HR)',
+    'Non-linear relationships and interactions',
+    'Mixed numeric and categorical features (no preprocessing)',
+    'Missing values present; trees handle them natively'
+  ],
+  fails: [
+    'High variance; small data changes produce very different trees',
+    'Need to extrapolate beyond training range',
+    'Diagonal boundaries (trees produce staircases)',
+    'Single tree rarely wins on accuracy; ensembles do'
+  ]
+});
+
+(function() {
+  const svg = document.getElementById('tree-svg');
+  const regionsG = document.getElementById('tree-regions');
+  const trainG = document.getElementById('tree-train-points');
+  const testG = document.getElementById('tree-test-points');
+  const maxDepthSlider = document.getElementById('tree-max-depth');
+  const minSplitSlider = document.getElementById('tree-min-split');
+  const minLeafSlider = document.getElementById('tree-min-leaf');
+  const testSizeSlider = document.getElementById('tree-test-size');
+  const metricsEl = document.getElementById('tree-metrics');
+  const narrativeEl = document.getElementById('tree-narrative');
+  const rulesEl = document.getElementById('tree-rules');
+  const splitStripEl = document.getElementById('tree-split-strip');
+  const LEFT = 60, RIGHT = 540, TOP = 40, BOTTOM = 360;
+
+  let criterion = 'gini';
+  let allPts = [];
+  let train = [], test = [];
+
+  function generate(seed = 33) {
+    const rng = (() => { let s = seed; return () => { s = (s*1664525+1013904223)%4294967296; return s/4294967296; }; })();
+    allPts = [];
+    for (let i = 0; i < 80; i++) {
+      const x = LEFT + rng() * (RIGHT - LEFT);
+      const y = TOP + rng() * (BOTTOM - TOP);
+      const nx = (x - LEFT) / (RIGHT - LEFT);
+      const ny = (y - TOP) / (BOTTOM - TOP);
+      let c = nx - ny * 0.7 > 0.15 ? 1 : 0;
+      if (rng() < 0.1) c = 1 - c;
+      allPts.push({ x, y, c });
+    }
+  }
+
+  function resplit() {
+    const testFrac = parseFloat(testSizeSlider.value);
+    const shuffled = shuffle(allPts);
+    const cut = Math.floor(shuffled.length * (1 - testFrac));
+    train = shuffled.slice(0, cut);
+    test = shuffled.slice(cut);
+  }
+
+  function impurity(group) {
+    if (group.length === 0) return 0;
+    const p1 = group.filter(g => g.c === 1).length / group.length;
+    const p0 = 1 - p1;
+    if (criterion === 'gini') {
+      return 2 * p1 * p0;
+    } else {
+      // entropy
+      if (p1 === 0 || p0 === 0) return 0;
+      return -(p1 * Math.log2(p1) + p0 * Math.log2(p0));
+    }
+  }
+
+  function bestSplit(group, minSplit) {
+    if (group.length < minSplit) return null;
+    let bestImp = Infinity, best = null;
+    ['x', 'y'].forEach(feat => {
+      const sorted = [...group].sort((a,b) => a[feat] - b[feat]);
+      for (let i = 1; i < sorted.length; i++) {
+        const t = (sorted[i-1][feat] + sorted[i][feat]) / 2;
+        const left = group.filter(g => g[feat] <= t);
+        const right = group.filter(g => g[feat] > t);
+        if (left.length === 0 || right.length === 0) continue;
+        const imp = (left.length * impurity(left) + right.length * impurity(right)) / group.length;
+        if (imp < bestImp) {
+          bestImp = imp;
+          best = { feat, t, imp };
+        }
+      }
+    });
+    return best;
+  }
+
+  function buildTree(group, bounds, depth, maxDepth, minSplit, minLeaf, rule = '') {
+    const majority = group.filter(g => g.c === 1).length > group.length / 2 ? 1 : 0;
+    if (depth >= maxDepth || group.length < minSplit || impurity(group) === 0) {
+      return [{ bounds, prediction: majority, group, rule: rule || '(root)', depth }];
+    }
+    const split = bestSplit(group, minSplit);
+    if (!split) {
+      return [{ bounds, prediction: majority, group, rule: rule || '(root)', depth }];
+    }
+    const leftGroup = group.filter(g => g[split.feat] <= split.t);
+    const rightGroup = group.filter(g => g[split.feat] > split.t);
+    // Enforce min_samples_leaf: if either child too small, don't split
+    if (leftGroup.length < minLeaf || rightGroup.length < minLeaf) {
+      return [{ bounds, prediction: majority, group, rule: rule || '(root)', depth }];
+    }
+    const leftBounds = { ...bounds };
+    const rightBounds = { ...bounds };
+    const label = split.feat === 'x' ? 'income' : 'debt';
+    const norm = split.feat === 'x'
+      ? ((split.t - LEFT) / (RIGHT - LEFT) * 100).toFixed(0) + 'k'
+      : ((split.t - TOP) / (BOTTOM - TOP) * 0.8).toFixed(2);
+    if (split.feat === 'x') { leftBounds.right = split.t; rightBounds.left = split.t; }
+    else { leftBounds.bottom = split.t; rightBounds.top = split.t; }
+    const leftRule = rule + (rule ? ' AND ' : '') + `${label}≤${norm}`;
+    const rightRule = rule + (rule ? ' AND ' : '') + `${label}>${norm}`;
+    return [
+      ...buildTree(leftGroup, leftBounds, depth+1, maxDepth, minSplit, minLeaf, leftRule),
+      ...buildTree(rightGroup, rightBounds, depth+1, maxDepth, minSplit, minLeaf, rightRule)
+    ];
+  }
+
+  function predictOne(regions, pt) {
+    const r = regions.find(r =>
+      pt.x >= r.bounds.left && pt.x <= r.bounds.right &&
+      pt.y >= r.bounds.top && pt.y <= r.bounds.bottom
+    );
+    return r ? r.prediction : 0;
+  }
+
+  const tracker = new CompareTracker(
+    document.getElementById('tree-compare'),
+    [
+      { key: 'trainAcc', label: 'Train accuracy', fmt: v => (v*100).toFixed(1) + '%', higherIsBetter: true },
+      { key: 'testAcc',  label: 'Test accuracy',  fmt: v => (v*100).toFixed(1) + '%', higherIsBetter: true },
+      { key: 'gap',      label: 'Gap (overfit)',  fmt: v => (v*100).toFixed(1) + ' pp', higherIsBetter: false },
+      { key: 'leaves',   label: '# leaves',       fmt: v => String(v),                  higherIsBetter: false }
+    ]
+  );
+
+  function render() {
+    const maxDepth = parseInt(maxDepthSlider.value);
+    const minSplit = parseInt(minSplitSlider.value);
+    const minLeaf = parseInt(minLeafSlider.value);
+    document.getElementById('tree-max-depth-v').textContent = maxDepth;
+    document.getElementById('tree-min-split-v').textContent = minSplit;
+    document.getElementById('tree-min-leaf-v').textContent = minLeaf;
+    document.getElementById('tree-test-size-v').textContent = parseFloat(testSizeSlider.value).toFixed(2);
+
+    const regions = buildTree(train, { left: LEFT, right: RIGHT, top: TOP, bottom: BOTTOM }, 0, maxDepth, minSplit, minLeaf);
+
+    // Draw regions
+    regionsG.innerHTML = regions.map(r => {
+      const col = r.prediction === 1 ? '#1fa85a' : '#ff6b1a';
+      return `<rect x="${r.bounds.left}" y="${r.bounds.top}"
+                    width="${r.bounds.right - r.bounds.left}" height="${r.bounds.bottom - r.bounds.top}"
+                    fill="${col}" opacity="0.13"
+                    stroke="${col}" stroke-opacity="0.35" stroke-width="1"/>`;
+    }).join('');
+
+    // Draw train (solid) and test (ring) points
+    trainG.innerHTML = train.map(p =>
+      `<circle cx="${p.x}" cy="${p.y}" r="4.5" fill="${p.c === 1 ? '#1fa85a' : '#ff6b1a'}" opacity="0.9"/>`
+    ).join('');
+    testG.innerHTML = test.map(p =>
+      `<circle cx="${p.x}" cy="${p.y}" r="5.5" fill="none" stroke="${p.c === 1 ? '#1fa85a' : '#ff6b1a'}" stroke-width="2"/>`
+    ).join('');
+
+    // Metrics
+    const trainPreds = train.map(p => predictOne(regions, p));
+    const trainTruth = train.map(p => p.c);
+    const testPreds = test.map(p => predictOne(regions, p));
+    const testTruth = test.map(p => p.c);
+    const trainM = classMetrics(trainPreds, trainTruth);
+    const testM  = classMetrics(testPreds, testTruth);
+    const gap = trainM.acc - testM.acc;
+    const nLeaves = regions.length;
+
+    // Tile tones — overfit warning when gap > 0.10
+    const gapTone = gap > 0.10 ? 'warn' : (gap < 0.03 ? 'good' : null);
+
+    renderMetricDash(metricsEl, [
+      { label: 'Train acc', value: (trainM.acc * 100).toFixed(1) + '%' },
+      { label: 'Test acc',  value: (testM.acc  * 100).toFixed(1) + '%', tone: testM.acc > 0.8 ? 'good' : (testM.acc < 0.65 ? 'warn' : null) },
+      { label: 'Train-test gap', value: (gap * 100).toFixed(1) + ' pp', tone: gapTone },
+      { label: 'F1 (test)', value: testM.f1.toFixed(3) },
+      { label: '# leaves',  value: String(nLeaves) },
+      { label: 'Tree depth reached', value: String(Math.max(...regions.map(r => r.depth), 0)) }
+    ]);
+
+    // Split bar
+    renderSplitBar(splitStripEl, train.length, test.length);
+
+    // Narrative
+    if (gap > 0.15) {
+      setNarrative(narrativeEl, {
+        label: 'Overfitting alert',
+        text: `Your tree fits the training data well (${(trainM.acc*100).toFixed(0)}%) but generalizes poorly (test ${(testM.acc*100).toFixed(0)}%). Try reducing max_depth or raising min_samples_leaf.`,
+        tone: 'alert'
+      });
+    } else if (testM.acc < 0.65 && trainM.acc < 0.75) {
+      setNarrative(narrativeEl, {
+        label: 'Underfitting',
+        text: `Both train and test accuracy are low. The tree is too restricted. Try increasing max_depth or lowering min_samples_split.`,
+        tone: 'alert'
+      });
+    } else if (gap < 0.04 && testM.acc > 0.82) {
+      setNarrative(narrativeEl, {
+        label: 'Good generalization',
+        text: `Train and test accuracy are close and both strong. This is the sweet spot — the tree is complex enough to capture the pattern but not so deep it memorizes noise.`,
+        tone: 'success'
+      });
+    } else if (nLeaves > 20) {
+      setNarrative(narrativeEl, {
+        label: 'Growing complex',
+        text: `${nLeaves} leaves is a lot for this dataset. Stakeholders will struggle to read ${nLeaves} rules. Consider raising min_samples_leaf to simplify.`,
+        tone: 'default'
+      });
+    } else {
+      setNarrative(narrativeEl, {
+        label: 'Status',
+        text: `${criterion} criterion, max_depth=${maxDepth}, min_samples_leaf=${minLeaf}. Tree has ${nLeaves} leaves. Adjust hyperparameters to see the tradeoffs.`,
+        tone: 'default'
+      });
+    }
+
+    // Comparison tracker
+    tracker.update({ trainAcc: trainM.acc, testAcc: testM.acc, gap, leaves: nLeaves });
+
+    // Rules
+    const rulesToShow = regions.slice(0, 4);
+    rulesEl.textContent = rulesToShow.map(r =>
+      `IF ${r.rule} → ${r.prediction === 1 ? 'APPROVE' : 'DECLINE'}`
+    ).join('\n') + (regions.length > 4 ? `\n… (${regions.length - 4} more rules)` : '');
+  }
+
+  // Wire everything
+  [maxDepthSlider, minSplitSlider, minLeafSlider].forEach(s => s.oninput = render);
+  testSizeSlider.oninput = () => { resplit(); render(); };
+  wireSegToggle('tree-criterion', v => { criterion = v; render(); });
+
+  document.getElementById('tree-reset').onclick = () => {
+    maxDepthSlider.value = 3;
+    minSplitSlider.value = 5;
+    minLeafSlider.value = 2;
+    testSizeSlider.value = 0.3;
+    criterion = 'gini';
+    document.querySelectorAll('#tree-criterion button').forEach(b => b.classList.toggle('active', b.dataset.val === 'gini'));
+    tracker.reset();
+    resplit();
+    render();
+  };
+  document.getElementById('tree-reshuffle').onclick = () => { resplit(); render(); };
+
+  generate();
+  resplit();
+  render();
+})();
+
+// ============================================================
+// LESSON: LOGISTIC REGRESSION (Week 11)
+// ============================================================
+buildLesson('logistic', {
+  week: 11,
+  chapter: 'Chapter 10 — Logistic Regression',
+  title: 'Logistic <em>Regression</em>',
+  tagline: 'A churn classifier with two features. Tune regularization strength, class weights, and the decision threshold the way scikit-learn exposes them. Watch how each control trades off precision, recall, and model complexity.',
+  hint: 'TUNE REGULARIZATION · SHIFT THE THRESHOLD · SEE METRICS MOVE',
+  vizHTML: `
+    <svg class="canvas" viewBox="0 0 600 420" id="log-svg">
+      <defs>
+        <linearGradient id="log-heatmap" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#1fa85a" stop-opacity="0.3"/>
+          <stop offset="50%" stop-color="#ffffff" stop-opacity="0.05"/>
+          <stop offset="100%" stop-color="#ff6b1a" stop-opacity="0.3"/>
+        </linearGradient>
+      </defs>
+      <g id="log-bg"></g>
+      <line x1="60" y1="360" x2="540" y2="360" stroke="#c8d8ec"/>
+      <line x1="60" y1="40" x2="60" y2="360" stroke="#c8d8ec"/>
+      <text x="545" y="375" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae">tenure →</text>
+      <text x="50" y="35" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae">monthly spend ↑</text>
+      <g id="log-points"></g>
+      <path id="log-boundary" fill="none" stroke="#102a56" stroke-width="2.5" stroke-dasharray="6,4"/>
+    </svg>
+    <div class="controls">
+      <div class="param-group">
+        <h5>Model Hyperparameters</h5>
+        ${paramRow({ skName: 'C', plain: 'Inverse regularization (↓ = stronger shrink)', id: 'log-C', min: -2, max: 2, step: 0.1, value: 0, fmt: v => Math.pow(10, +v).toFixed(2) })}
+        <div class="param-row">
+          <div class="param-label">
+            <span class="sk">class_weight</span>
+            <span class="plain">Reweight minority class</span>
+          </div>
+          ${segToggle({ id: 'log-cw', options: [{value:'none', label:'None'}, {value:'balanced', label:'balanced'}], value: 'none' })}
+        </div>
+        <div class="param-row">
+          <div class="param-label">
+            <span class="sk">penalty</span>
+            <span class="plain">Regularization type</span>
+          </div>
+          ${segToggle({ id: 'log-penalty', options: [{value:'l2', label:'l2'}, {value:'l1', label:'l1'}], value: 'l2' })}
+        </div>
+      </div>
+
+      <div class="param-group">
+        <h5>Decision Threshold</h5>
+        ${paramRow({ skName: 'threshold', plain: 'P(positive) cutoff for predicting 1', id: 'log-thr', min: 0.05, max: 0.95, step: 0.05, value: 0.5, fmt: v => (+v).toFixed(2) })}
+      </div>
+
+      <div class="param-group">
+        <h5>Train / Test Setup</h5>
+        ${paramRow({ skName: 'test_size', plain: 'Fraction held out', id: 'log-test-size', min: 0.1, max: 0.5, step: 0.05, value: 0.3, fmt: v => (+v).toFixed(2) })}
+        ${paramRow({ skName: 'class_imbalance', plain: 'Positive class frequency', id: 'log-imb', min: 0.1, max: 0.5, step: 0.05, value: 0.35, fmt: v => (+v*100).toFixed(0)+'%' })}
+        <div class="split-strip" id="log-split-strip"></div>
+      </div>
+
+      <div class="metrics-dash">
+        <h5>Live Performance (test set)</h5>
+        <div id="log-metrics"></div>
+      </div>
+
+      <div class="narrative-box" id="log-narrative">
+        <span class="nar-label">Status</span>Adjust a hyperparameter to see how the model responds.
+      </div>
+
+      <div class="compare-panel" id="log-compare"></div>
+
+      <div class="action-row">
+        <button class="btn ghost" id="log-reset">Reset to defaults</button>
+        <button class="btn ghost" id="log-reshuffle">New train/test split</button>
+      </div>
+    </div>
+  `,
+  explanation: `
+    <p>Logistic regression fits a decision boundary by maximizing the likelihood of the training labels under a sigmoid model. The hyperparameters above mirror <code>sklearn.linear_model.LogisticRegression</code>.</p>
+    <p><strong>C</strong> controls regularization. Smaller C shrinks the coefficients, giving you a simpler, more stable model at the cost of some training accuracy. Larger C lets coefficients grow and fit the training set more tightly — but risk overfitting. <strong>class_weight='balanced'</strong> reweights the loss so a minority class isn't ignored. <strong>penalty='l1'</strong> can zero out coefficients entirely, useful when you want the model to select features.</p>
+    <div class="callout">The most important business output is not the prediction. It is the odds ratio. "Customers on month-to-month contracts have 3.4× higher odds of churning than annual customers." That sentence is the deliverable.</div>
+    <p>Drag the <strong>threshold</strong> slider and notice: accuracy may barely move, but precision and recall swap in huge chunks. That's the real decision, not the model fit. In fraud detection you'd set a low threshold (catch more, tolerate false alarms). In spam filtering you'd set it high (never drop real email).</p>
+  `,
+  uses: [
+    { domain: 'Credit scoring', example: 'FICO and bank internal scorecards. Regulatory gold standard.' },
+    { domain: 'Telecom churn', example: 'Industry workhorse; probability per customer feeds retention workflow.' },
+    { domain: 'Marketing response', example: 'Probability a customer responds to a campaign; top-X% get mailed.' },
+    { domain: 'Healthcare', example: 'Disease-indicator modeling from patient features.' }
+  ],
+  wins: [
+    'Binary classification with transparent coefficients',
+    'Regulated industries (banking, insurance, healthcare)',
+    'Need well-calibrated probability outputs',
+    'Strong, defensible baseline before reaching for complex methods'
+  ],
+  fails: [
+    'Strong non-linear interactions dominate (trees or ensembles win)',
+    'Severe class imbalance without correction',
+    'Very high dimensional data without regularization',
+    'Multi-class problems (possible but messier than trees)'
+  ]
+});
+
+(function() {
+  const svg = document.getElementById('log-svg');
+  const bgG = document.getElementById('log-bg');
+  const ptsG = document.getElementById('log-points');
+  const boundaryPath = document.getElementById('log-boundary');
+  const cSl = document.getElementById('log-C');
+  const thrSl = document.getElementById('log-thr');
+  const testSizeSl = document.getElementById('log-test-size');
+  const imbSl = document.getElementById('log-imb');
+  const metricsEl = document.getElementById('log-metrics');
+  const narrativeEl = document.getElementById('log-narrative');
+  const splitStripEl = document.getElementById('log-split-strip');
+  const LEFT = 60, RIGHT = 540, TOP = 40, BOTTOM = 360;
+
+  let classWeight = 'none';
+  let penalty = 'l2';
+  let allPts = [];
+  let train = [], test = [];
+  let seed = 41;
+
+  function generate() {
+    const imb = parseFloat(imbSl.value);
+    const n = 140;
+    const nPos = Math.floor(n * imb);
+    const nNeg = n - nPos;
+    let s = seed;
+    const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+    const gauss = () => {
+      let u = 0, v = 0;
+      while (u === 0) u = rnd(); while (v === 0) v = rnd();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    };
+    allPts = [];
+    // Class 0 (no churn): high tenure, high spend
+    for (let i = 0; i < nNeg; i++) {
+      allPts.push({
+        x: 380 + gauss() * 70,
+        y: 130 + gauss() * 55,
+        cls: 0
+      });
+    }
+    // Class 1 (churn): low tenure, lower spend
+    for (let i = 0; i < nPos; i++) {
+      allPts.push({
+        x: 200 + gauss() * 70,
+        y: 240 + gauss() * 55,
+        cls: 1
+      });
+    }
+    allPts.forEach(p => {
+      p.x = Math.max(LEFT+8, Math.min(RIGHT-8, p.x));
+      p.y = Math.max(TOP+8, Math.min(BOTTOM-8, p.y));
+    });
+  }
+
+  function resplit() {
+    const testFrac = parseFloat(testSizeSl.value);
+    const shuf = shuffle(allPts);
+    const cut = Math.floor(shuf.length * (1 - testFrac));
+    train = shuf.slice(0, cut);
+    test = shuf.slice(cut);
+  }
+
+  // Normalize features for numerical stability
+  function normalize(pt) {
+    return {
+      x: (pt.x - 300) / 150,
+      y: (pt.y - 200) / 100,
+      cls: pt.cls
+    };
+  }
+
+  // Train logistic regression with gradient descent (with regularization)
+  function fitLogistic(data, CValue, cw, pen) {
+    const dNorm = data.map(normalize);
+    // Coefficient vector [b0, b1, b2] for intercept + 2 features
+    let w = [0, 0, 0];
+    const lr = 0.1;
+    const lambda = 1 / Math.max(CValue, 0.001);
+    const iterations = 150;
+
+    // Weights per sample for class_weight='balanced'
+    const nPos = data.filter(d => d.cls === 1).length;
+    const nNeg = data.length - nPos;
+    const wPos = cw === 'balanced' ? data.length / (2 * Math.max(nPos, 1)) : 1;
+    const wNeg = cw === 'balanced' ? data.length / (2 * Math.max(nNeg, 1)) : 1;
+
+    for (let it = 0; it < iterations; it++) {
+      let g0 = 0, g1 = 0, g2 = 0;
+      dNorm.forEach((p) => {
+        const z = w[0] + w[1] * p.x + w[2] * p.y;
+        const pred = 1 / (1 + Math.exp(-z));
+        const err = pred - p.cls;
+        const sw = p.cls === 1 ? wPos : wNeg;
+        g0 += err * sw;
+        g1 += err * p.x * sw;
+        g2 += err * p.y * sw;
+      });
+      g0 /= dNorm.length; g1 /= dNorm.length; g2 /= dNorm.length;
+      // Regularization gradient (don't penalize intercept)
+      if (pen === 'l2') {
+        g1 += lambda * w[1] / dNorm.length;
+        g2 += lambda * w[2] / dNorm.length;
+      } else {
+        // l1 subgradient (soft)
+        g1 += lambda * Math.sign(w[1]) / dNorm.length;
+        g2 += lambda * Math.sign(w[2]) / dNorm.length;
+      }
+      w[0] -= lr * g0;
+      w[1] -= lr * g1;
+      w[2] -= lr * g2;
+      // l1 proximal step: soft-threshold
+      if (pen === 'l1') {
+        const thresh = lr * lambda / dNorm.length * 0.3;
+        w[1] = Math.sign(w[1]) * Math.max(0, Math.abs(w[1]) - thresh);
+        w[2] = Math.sign(w[2]) * Math.max(0, Math.abs(w[2]) - thresh);
+      }
+    }
+    return w;
+  }
+
+  function predictProba(w, pt) {
+    const p = normalize(pt);
+    const z = w[0] + w[1] * p.x + w[2] * p.y;
+    return 1 / (1 + Math.exp(-z));
+  }
+
+  const tracker = new CompareTracker(
+    document.getElementById('log-compare'),
+    [
+      { key: 'acc',  label: 'Test accuracy', fmt: v => (v*100).toFixed(1) + '%', higherIsBetter: true },
+      { key: 'prec', label: 'Precision',     fmt: v => (v*100).toFixed(1) + '%', higherIsBetter: true },
+      { key: 'rec',  label: 'Recall',        fmt: v => (v*100).toFixed(1) + '%', higherIsBetter: true },
+      { key: 'f1',   label: 'F1',            fmt: v => v.toFixed(3),              higherIsBetter: true }
+    ]
+  );
+
+  function render() {
+    const CValue = Math.pow(10, parseFloat(cSl.value));
+    const threshold = parseFloat(thrSl.value);
+    document.getElementById('log-C-v').textContent = CValue.toFixed(2);
+    document.getElementById('log-thr-v').textContent = threshold.toFixed(2);
+    document.getElementById('log-test-size-v').textContent = parseFloat(testSizeSl.value).toFixed(2);
+    document.getElementById('log-imb-v').textContent = (parseFloat(imbSl.value)*100).toFixed(0) + '%';
+
+    const w = fitLogistic(train, CValue, classWeight, penalty);
+
+    // Build probability heatmap (coarse grid)
+    let bg = '';
+    const step = 20;
+    for (let x = LEFT; x < RIGHT; x += step) {
+      for (let y = TOP; y < BOTTOM; y += step) {
+        const prob = predictProba(w, { x: x + step/2, y: y + step/2, cls: 0 });
+        const isPos = prob >= threshold;
+        const col = isPos ? '#ff6b1a' : '#1fa85a';
+        // Stronger opacity when confident
+        const conf = Math.abs(prob - threshold);
+        const opacity = 0.08 + conf * 0.25;
+        bg += `<rect x="${x}" y="${y}" width="${step}" height="${step}" fill="${col}" opacity="${opacity}"/>`;
+      }
+    }
+    bgG.innerHTML = bg;
+
+    // Decision boundary: w0 + w1*xn + w2*yn = logit(threshold)
+    // => yn = (logit(thr) - w0 - w1*xn) / w2
+    const logitThr = Math.log(threshold / (1 - threshold));
+    if (Math.abs(w[2]) > 0.001) {
+      // For two x-endpoints, compute y
+      const pathPts = [];
+      for (let xPx = LEFT; xPx <= RIGHT; xPx += 20) {
+        const xn = (xPx - 300) / 150;
+        const yn = (logitThr - w[0] - w[1] * xn) / w[2];
+        const yPx = yn * 100 + 200;
+        if (yPx > TOP && yPx < BOTTOM) pathPts.push([xPx, yPx]);
+      }
+      if (pathPts.length > 1) {
+        boundaryPath.setAttribute('d', 'M' + pathPts.map(p => p.join(',')).join(' L'));
+      } else {
+        boundaryPath.setAttribute('d', '');
+      }
+    } else {
+      boundaryPath.setAttribute('d', '');
+    }
+
+    // Render points (train solid, test ring)
+    let html = '';
+    train.forEach(p => {
+      html += `<circle cx="${p.x}" cy="${p.y}" r="4.5" fill="${p.cls === 1 ? '#ff6b1a' : '#1fa85a'}" opacity="0.85"/>`;
+    });
+    test.forEach(p => {
+      html += `<circle cx="${p.x}" cy="${p.y}" r="5.5" fill="none" stroke="${p.cls === 1 ? '#ff6b1a' : '#1fa85a'}" stroke-width="2"/>`;
+    });
+    ptsG.innerHTML = html;
+
+    // Compute metrics on test set
+    const testProbs = test.map(p => predictProba(w, p));
+    const testPreds = testProbs.map(p => p >= threshold ? 1 : 0);
+    const testTruth = test.map(p => p.cls);
+    const m = classMetrics(testPreds, testTruth);
+
+    renderMetricDash(metricsEl, [
+      { label: 'Accuracy', value: (m.acc * 100).toFixed(1) + '%' },
+      { label: 'Precision', value: (m.prec * 100).toFixed(1) + '%' },
+      { label: 'Recall',   value: (m.rec  * 100).toFixed(1) + '%' },
+      { label: 'F1',       value: m.f1.toFixed(3) },
+      { label: 'β₁ (tenure)', value: w[1].toFixed(2) },
+      { label: 'β₂ (spend)',  value: w[2].toFixed(2) }
+    ]);
+
+    renderSplitBar(splitStripEl, train.length, test.length);
+
+    // Narrative
+    const l1Zeroed = penalty === 'l1' && (Math.abs(w[1]) < 0.05 || Math.abs(w[2]) < 0.05);
+    if (l1Zeroed) {
+      const zeroed = [];
+      if (Math.abs(w[1]) < 0.05) zeroed.push('tenure');
+      if (Math.abs(w[2]) < 0.05) zeroed.push('spend');
+      setNarrative(narrativeEl, {
+        label: 'L1 feature selection',
+        text: `L1 regularization has zeroed out ${zeroed.join(' and ')}. The model has decided this feature adds no predictive value at this C. Raise C to keep more features.`,
+        tone: 'default'
+      });
+    } else if (threshold < 0.3 && m.rec > 0.85 && m.prec < 0.55) {
+      setNarrative(narrativeEl, {
+        label: 'Recall-optimized',
+        text: `Low threshold catches ${(m.rec*100).toFixed(0)}% of true positives but only ${(m.prec*100).toFixed(0)}% of your predictions are right. Good for cancer screening, fraud — bad for spam filtering.`,
+        tone: 'default'
+      });
+    } else if (threshold > 0.7 && m.prec > 0.85 && m.rec < 0.55) {
+      setNarrative(narrativeEl, {
+        label: 'Precision-optimized',
+        text: `High threshold makes you very confident in predictions (${(m.prec*100).toFixed(0)}% precision) but you miss ${((1-m.rec)*100).toFixed(0)}% of true cases. Good for spam, bad for medical screening.`,
+        tone: 'default'
+      });
+    } else if (classWeight === 'balanced' && parseFloat(imbSl.value) < 0.25) {
+      setNarrative(narrativeEl, {
+        label: 'Class balancing active',
+        text: `With class_weight='balanced' the loss is reweighted to treat the minority class as if it were 50%. Notice how recall improved compared to class_weight='None' on the same data.`,
+        tone: 'success'
+      });
+    } else if (m.f1 > 0.80) {
+      setNarrative(narrativeEl, {
+        label: 'Good fit',
+        text: `F1=${m.f1.toFixed(2)} at threshold ${threshold.toFixed(2)} with C=${CValue.toFixed(2)}. The model separates the classes well on the test set.`,
+        tone: 'success'
+      });
+    } else {
+      setNarrative(narrativeEl, {
+        label: 'Status',
+        text: `C=${CValue.toFixed(2)}, penalty=${penalty}, threshold=${threshold.toFixed(2)}. Precision ${(m.prec*100).toFixed(0)}%, Recall ${(m.rec*100).toFixed(0)}%.`,
+        tone: 'default'
+      });
+    }
+
+    tracker.update({ acc: m.acc, prec: m.prec, rec: m.rec, f1: m.f1 });
+  }
+
+  [cSl, thrSl].forEach(s => s.oninput = render);
+  testSizeSl.oninput = () => { resplit(); render(); };
+  imbSl.oninput = () => { generate(); resplit(); render(); };
+  wireSegToggle('log-cw', v => { classWeight = v; render(); });
+  wireSegToggle('log-penalty', v => { penalty = v; render(); });
+
+  document.getElementById('log-reset').onclick = () => {
+    cSl.value = 0; thrSl.value = 0.5; testSizeSl.value = 0.3; imbSl.value = 0.35;
+    classWeight = 'none'; penalty = 'l2';
+    document.querySelectorAll('#log-cw button').forEach(b => b.classList.toggle('active', b.dataset.val === 'none'));
+    document.querySelectorAll('#log-penalty button').forEach(b => b.classList.toggle('active', b.dataset.val === 'l2'));
+    tracker.reset();
+    generate(); resplit(); render();
+  };
+  document.getElementById('log-reshuffle').onclick = () => { seed = (seed * 13 + 7) % 997; generate(); resplit(); render(); };
+
+  generate(); resplit(); render();
+})();
+
+// ============================================================
+// LESSON: LDA (Week 12)
+// ============================================================
+buildLesson('lda', {
+  week: 12,
+  chapter: 'Chapter 12 — Discriminant Analysis',
+  title: 'Linear Discriminant <em>Analysis</em>',
+  tagline: 'LDA assumes each class is a Gaussian blob. Tune the real scikit-learn hyperparameters (shrinkage, class priors, LDA-vs-QDA) and drag the class centers to see the decision boundary respond.',
+  hint: 'TOGGLE LDA/QDA · TUNE SHRINKAGE · DRAG THE CENTERS',
+  vizHTML: `
+    <svg class="canvas" viewBox="0 0 600 420" id="lda-svg">
+      <g id="lda-heatmap"></g>
+      <g id="lda-boundary"></g>
+      <g id="lda-points"></g>
+      <circle id="lda-centerA" cx="200" cy="170" r="14" fill="#1fa85a" stroke="#ffffff" stroke-width="3" class="pt"/>
+      <circle id="lda-centerB" cx="420" cy="250" r="14" fill="#2557c7" stroke="#ffffff" stroke-width="3" class="pt"/>
+      <text x="60" y="400" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae">feature 1 →</text>
+      <text x="540" y="400" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#6d82ae">Drag both class centers</text>
+    </svg>
+    <div class="controls">
+      <div class="param-group">
+        <h5>Discriminant Analysis Hyperparameters</h5>
+        <div class="param-row">
+          <div class="param-label">
+            <span class="sk">classifier</span>
+            <span class="plain">Linear vs quadratic boundary</span>
+          </div>
+          ${segToggle({ id: 'lda-type', options: [{value:'lda', label:'LDA'}, {value:'qda', label:'QDA'}], value: 'lda' })}
+        </div>
+        ${paramRow({ skName: 'shrinkage', plain: 'Regularize covariance (LDA only)', id: 'lda-shrink', min: 0, max: 1, step: 0.05, value: 0, fmt: v => (+v).toFixed(2) })}
+        <div class="param-row">
+          <div class="param-label">
+            <span class="sk">priors</span>
+            <span class="plain">Class prior from data or uniform</span>
+          </div>
+          ${segToggle({ id: 'lda-priors', options: [{value:'empirical', label:'empirical'}, {value:'uniform', label:'uniform'}], value: 'empirical' })}
+        </div>
+      </div>
+
+      <div class="param-group">
+        <h5>Dataset Shape</h5>
+        ${paramRow({ skName: 'class_imbalance', plain: 'Class A fraction', id: 'lda-imb', min: 0.15, max: 0.85, step: 0.05, value: 0.5, fmt: v => (+v*100).toFixed(0) + '%' })}
+        ${paramRow({ skName: 'spread_A', plain: 'Class A variance', id: 'lda-sa', min: 15, max: 70, step: 2, value: 35, fmt: v => v })}
+        ${paramRow({ skName: 'spread_B', plain: 'Class B variance', id: 'lda-sb', min: 15, max: 70, step: 2, value: 35, fmt: v => v })}
+        ${paramRow({ skName: 'test_size', plain: 'Held-out fraction', id: 'lda-test', min: 0.1, max: 0.5, step: 0.05, value: 0.3, fmt: v => (+v).toFixed(2) })}
+        <div class="split-strip" id="lda-split-strip"></div>
+      </div>
+
+      <div class="metrics-dash">
+        <h5>Classifier Performance</h5>
+        <div id="lda-metrics"></div>
+      </div>
+
+      <div class="narrative-box" id="lda-narrative">
+        <span class="nar-label">Status</span>Drag the class centers or toggle LDA/QDA.
+      </div>
+
+      <div class="compare-panel" id="lda-compare"></div>
+
+      <div class="action-row">
+        <button class="btn ghost" id="lda-reset">Reset to defaults</button>
+        <button class="btn ghost" id="lda-reshuffle">Regenerate data</button>
+      </div>
+    </div>
+  `,
+  explanation: `
+    <p>LDA is logistic regression's older cousin. Instead of modeling <code>P(class | features)</code> directly, it models each class as a Gaussian blob, then uses Bayes rule to find the optimal boundary. <strong>LDA</strong> assumes both classes share the same covariance, so the boundary is always linear. <strong>QDA</strong> drops that assumption and lets each class have its own covariance, so boundaries become quadratic (curves).</p>
+    <p><strong>shrinkage</strong> is the small-sample-size saver. When you have few observations, the estimated covariance matrix is noisy and often singular (not invertible). Shrinkage pulls the covariance toward a diagonal identity matrix, regularizing it. Drag the <code>shrinkage</code> slider and watch the boundary rotate as the covariance estimate gets pulled toward the identity.</p>
+    <div class="callout">Try this: set the two class spreads to very different values (Class A = 20, Class B = 60). Switch to QDA. The boundary becomes a curve that wraps around the smaller, tighter class. That is QDA's power, and its risk if you do not have enough data to estimate those two covariances reliably.</div>
+    <p>The deep lesson: LDA, logistic regression, and linear SVM all produce a linear boundary. What differs is the assumption about how the data was generated. When assumptions hold, LDA is the most statistically efficient. When they don't, logistic regression is more robust.</p>
+  `,
+  uses: [
+    { domain: 'Bankruptcy prediction', example: "Altman's Z-score, the classic discriminant model still taught in finance." },
+    { domain: 'Quality control', example: 'Pass/fail/rework classification from continuous measurement data.' },
+    { domain: 'Medical diagnosis', example: 'Classifying using lab values (often approximately Gaussian within groups).' },
+    { domain: 'Dimensionality reduction', example: 'LDA projects data onto the axis that separates classes best.' }
+  ],
+  wins: [
+    'Features are continuous and approximately Gaussian within class',
+    'Small sample size relative to feature count',
+    'Classes are well-separated',
+    'Want both classification AND a low-dimensional visualization of separation'
+  ],
+  fails: [
+    'Features are categorical or heavily skewed',
+    'Classes have very different covariance structures (use QDA)',
+    'Outliers present (sensitive to mean/covariance estimation)',
+    'Logistic regression is available and more robust'
+  ]
+});
+
+(function() {
+  const svg = document.getElementById('lda-svg');
+  const cA = document.getElementById('lda-centerA');
+  const cB = document.getElementById('lda-centerB');
+  const ptsG = document.getElementById('lda-points');
+  const heatG = document.getElementById('lda-heatmap');
+  const boundaryG = document.getElementById('lda-boundary');
+  const shrinkSl = document.getElementById('lda-shrink');
+  const imbSl = document.getElementById('lda-imb');
+  const spreadASl = document.getElementById('lda-sa');
+  const spreadBSl = document.getElementById('lda-sb');
+  const testSl = document.getElementById('lda-test');
+  const metricsEl = document.getElementById('lda-metrics');
+  const narrativeEl = document.getElementById('lda-narrative');
+  const splitStripEl = document.getElementById('lda-split-strip');
+
+  let classifierType = 'lda';
+  let priorMode = 'empirical';
+  let allPts = [];
+  let train = [], test = [];
+  let seed = 42;
+
+  function generate() {
+    const imb = parseFloat(imbSl.value);
+    const sA = parseFloat(spreadASl.value);
+    const sB = parseFloat(spreadBSl.value);
+    const n = 80;
+    const nA = Math.floor(n * imb);
+    const nB = n - nA;
+    let s = seed;
+    const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+    const gauss = () => {
+      let u = 0, v = 0; while (u === 0) u = rnd(); while (v === 0) v = rnd();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    };
+
+    allPts = [];
+    const ax = parseFloat(cA.getAttribute('cx')), ay = parseFloat(cA.getAttribute('cy'));
+    const bx = parseFloat(cB.getAttribute('cx')), by = parseFloat(cB.getAttribute('cy'));
+
+    for (let i = 0; i < nA; i++) {
+      allPts.push({
+        x: Math.max(70, Math.min(530, ax + gauss() * sA)),
+        y: Math.max(50, Math.min(370, ay + gauss() * sA * 0.9)),
+        cls: 0
+      });
+    }
+    for (let i = 0; i < nB; i++) {
+      allPts.push({
+        x: Math.max(70, Math.min(530, bx + gauss() * sB)),
+        y: Math.max(50, Math.min(370, by + gauss() * sB * 0.9)),
+        cls: 1
+      });
+    }
+  }
+
+  function resplit() {
+    const testFrac = parseFloat(testSl.value);
+    const shuf = shuffle(allPts);
+    const cut = Math.floor(shuf.length * (1 - testFrac));
+    train = shuf.slice(0, cut);
+    test = shuf.slice(cut);
+  }
+
+  // Fit LDA or QDA given current hyperparameters
+  function fit(data) {
+    const ptsA = data.filter(p => p.cls === 0);
+    const ptsB = data.filter(p => p.cls === 1);
+    if (ptsA.length < 2 || ptsB.length < 2) return null;
+
+    const mean = (arr, k) => arr.reduce((s, p) => s + p[k], 0) / arr.length;
+    const muA = { x: mean(ptsA, 'x'), y: mean(ptsA, 'y') };
+    const muB = { x: mean(ptsB, 'x'), y: mean(ptsB, 'y') };
+
+    // Covariance matrices
+    function covOf(pts, mu) {
+      let sxx = 0, syy = 0, sxy = 0;
+      pts.forEach(p => {
+        const dx = p.x - mu.x, dy = p.y - mu.y;
+        sxx += dx * dx; syy += dy * dy; sxy += dx * dy;
+      });
+      const n = Math.max(pts.length - 1, 1);
+      return { xx: sxx/n, yy: syy/n, xy: sxy/n };
+    }
+    const covA = covOf(ptsA, muA);
+    const covB = covOf(ptsB, muB);
+
+    // Priors
+    const priorA = priorMode === 'empirical' ? ptsA.length / data.length : 0.5;
+    const priorB = 1 - priorA;
+
+    if (classifierType === 'lda') {
+      // Pooled covariance
+      const nA = ptsA.length - 1, nB = ptsB.length - 1;
+      const total = nA + nB;
+      const pooled = {
+        xx: (nA * covA.xx + nB * covB.xx) / total,
+        yy: (nA * covA.yy + nB * covB.yy) / total,
+        xy: (nA * covA.xy + nB * covB.xy) / total
+      };
+      // Apply shrinkage: (1-s)*cov + s*identity_scaled
+      const shrinkage = parseFloat(shrinkSl.value);
+      const traceDiv2 = (pooled.xx + pooled.yy) / 2;
+      const shrunk = {
+        xx: (1 - shrinkage) * pooled.xx + shrinkage * traceDiv2,
+        yy: (1 - shrinkage) * pooled.yy + shrinkage * traceDiv2,
+        xy: (1 - shrinkage) * pooled.xy
+      };
+      return { type: 'lda', muA, muB, cov: shrunk, priorA, priorB };
+    } else {
+      // QDA — each class keeps its own covariance
+      return { type: 'qda', muA, muB, covA, covB, priorA, priorB };
+    }
+  }
+
+  // Gaussian log-likelihood (unnormalized for classification — the constant part cancels)
+  function logLik2D(pt, mu, cov) {
+    const dx = pt.x - mu.x, dy = pt.y - mu.y;
+    const det = cov.xx * cov.yy - cov.xy * cov.xy;
+    if (Math.abs(det) < 1e-6) return -Infinity;
+    const invXX = cov.yy / det;
+    const invYY = cov.xx / det;
+    const invXY = -cov.xy / det;
+    const mahal = dx*dx*invXX + dy*dy*invYY + 2*dx*dy*invXY;
+    return -0.5 * (Math.log(Math.abs(det)) + mahal);
+  }
+
+  function predict(pt, model) {
+    if (!model) return 0;
+    let logA, logB;
+    if (model.type === 'lda') {
+      logA = logLik2D(pt, model.muA, model.cov) + Math.log(model.priorA);
+      logB = logLik2D(pt, model.muB, model.cov) + Math.log(model.priorB);
+    } else {
+      logA = logLik2D(pt, model.muA, model.covA) + Math.log(model.priorA);
+      logB = logLik2D(pt, model.muB, model.covB) + Math.log(model.priorB);
+    }
+    return logA > logB ? 0 : 1;
+  }
+
+  const tracker = new CompareTracker(
+    document.getElementById('lda-compare'),
+    [
+      { key: 'trainAcc', label: 'Train accuracy', fmt: v => (v*100).toFixed(1) + '%', higherIsBetter: true },
+      { key: 'testAcc',  label: 'Test accuracy',  fmt: v => (v*100).toFixed(1) + '%', higherIsBetter: true },
+      { key: 'gap',      label: 'Gap',            fmt: v => (v*100).toFixed(1) + ' pp', higherIsBetter: false },
+      { key: 'f1',       label: 'F1 (test)',      fmt: v => v.toFixed(3),              higherIsBetter: true }
+    ]
+  );
+
+  function render() {
+    document.getElementById('lda-shrink-v').textContent = parseFloat(shrinkSl.value).toFixed(2);
+    document.getElementById('lda-imb-v').textContent = (parseFloat(imbSl.value)*100).toFixed(0) + '%';
+    document.getElementById('lda-sa-v').textContent = spreadASl.value;
+    document.getElementById('lda-sb-v').textContent = spreadBSl.value;
+    document.getElementById('lda-test-v').textContent = parseFloat(testSl.value).toFixed(2);
+
+    const model = fit(train);
+
+    // Decision-region heatmap (coarse)
+    if (model) {
+      let heat = '';
+      const step = 20;
+      for (let x = 60; x < 540; x += step) {
+        for (let y = 40; y < 380; y += step) {
+          const cls = predict({ x: x + step/2, y: y + step/2 }, model);
+          const col = cls === 0 ? '#1fa85a' : '#2557c7';
+          heat += `<rect x="${x}" y="${y}" width="${step}" height="${step}" fill="${col}" opacity="0.11"/>`;
+        }
+      }
+      heatG.innerHTML = heat;
+    }
+
+    // Draw points — train solid, test ring
+    let html = '';
+    train.forEach(p => {
+      const col = p.cls === 0 ? '#1fa85a' : '#2557c7';
+      html += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="${col}" opacity="0.85"/>`;
+    });
+    test.forEach(p => {
+      const col = p.cls === 0 ? '#1fa85a' : '#2557c7';
+      html += `<circle cx="${p.x}" cy="${p.y}" r="5" fill="none" stroke="${col}" stroke-width="2"/>`;
+    });
+    ptsG.innerHTML = html;
+
+    // Draw boundary curve (sampled where log-lik crossings happen)
+    if (model) {
+      const curve = [];
+      const yStep = 4;
+      for (let y = 40; y <= 380; y += yStep) {
+        // Find x where prediction changes class along this row
+        let prev = predict({ x: 60, y }, model);
+        for (let x = 62; x <= 540; x += 3) {
+          const cur = predict({ x, y }, model);
+          if (cur !== prev) {
+            curve.push([x, y]);
+            prev = cur;
+          }
+        }
+      }
+      // Connect with short dashed line segments (not a single path because QDA can be multi-piece)
+      let boundaryHtml = '';
+      // Connect as dots
+      curve.forEach(([x, y]) => {
+        boundaryHtml += `<circle cx="${x}" cy="${y}" r="1.5" fill="#ff6b1a" opacity="0.9"/>`;
+      });
+      // Also show the connecting line between centers
+      const ax = parseFloat(cA.getAttribute('cx')), ay = parseFloat(cA.getAttribute('cy'));
+      const bx = parseFloat(cB.getAttribute('cx')), by = parseFloat(cB.getAttribute('cy'));
+      boundaryHtml += `<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="#6d82ae" stroke-width="1" stroke-dasharray="2,3" opacity="0.5"/>`;
+      boundaryG.innerHTML = boundaryHtml;
+    } else {
+      boundaryG.innerHTML = '';
+    }
+
+    // Metrics
+    if (model) {
+      const trainPreds = train.map(p => predict(p, model));
+      const trainTruth = train.map(p => p.cls);
+      const testPreds = test.map(p => predict(p, model));
+      const testTruth = test.map(p => p.cls);
+      const trainM = classMetrics(trainPreds, trainTruth);
+      const testM = classMetrics(testPreds, testTruth);
+      const gap = trainM.acc - testM.acc;
+      const gapTone = gap > 0.1 ? 'warn' : (gap < 0.03 ? 'good' : null);
+
+      renderMetricDash(metricsEl, [
+        { label: 'Train acc', value: (trainM.acc * 100).toFixed(1) + '%' },
+        { label: 'Test acc',  value: (testM.acc * 100).toFixed(1) + '%', tone: testM.acc > 0.85 ? 'good' : (testM.acc < 0.65 ? 'warn' : null) },
+        { label: 'Gap',       value: (gap * 100).toFixed(1) + ' pp', tone: gapTone },
+        { label: 'F1 (test)', value: testM.f1.toFixed(3) },
+        { label: 'Precision', value: (testM.prec * 100).toFixed(0) + '%' },
+        { label: 'Recall',    value: (testM.rec * 100).toFixed(0) + '%' }
+      ]);
+
+      renderSplitBar(splitStripEl, train.length, test.length);
+
+      // Narrative
+      const sRatio = parseFloat(spreadASl.value) / parseFloat(spreadBSl.value);
+      const spreadsVeryDifferent = sRatio > 1.8 || sRatio < 0.55;
+      const shrinkage = parseFloat(shrinkSl.value);
+      const imb = parseFloat(imbSl.value);
+
+      if (classifierType === 'lda' && spreadsVeryDifferent && testM.acc < 0.85) {
+        setNarrative(narrativeEl, {
+          label: 'Assumption violated',
+          text: `Class spreads differ by ${sRatio > 1 ? sRatio.toFixed(1) : (1/sRatio).toFixed(1)}×, but LDA assumes they're equal. This is exactly when QDA wins. Toggle to QDA and watch test accuracy rise.`,
+          tone: 'alert'
+        });
+      } else if (classifierType === 'qda' && !spreadsVeryDifferent && train.length < 40) {
+        setNarrative(narrativeEl, {
+          label: 'QDA overkill',
+          text: `QDA fits a separate covariance per class, but your classes have similar spreads and the training set is small (${train.length} points). LDA with shrinkage would likely generalize better.`,
+          tone: 'default'
+        });
+      } else if (classifierType === 'lda' && shrinkage > 0.5 && testM.acc > 0.8) {
+        setNarrative(narrativeEl, {
+          label: 'Shrinkage helping',
+          text: `shrinkage=${shrinkage.toFixed(2)} is pulling the covariance estimate toward a diagonal identity. On small samples with noisy covariance, this consistently improves generalization. Test accuracy is ${(testM.acc*100).toFixed(0)}%.`,
+          tone: 'success'
+        });
+      } else if (priorMode === 'uniform' && Math.abs(imb - 0.5) > 0.2) {
+        setNarrative(narrativeEl, {
+          label: 'Prior mismatch',
+          text: `Your training data is ${(imb*100).toFixed(0)}%/${((1-imb)*100).toFixed(0)}%, but priors='uniform' treats them as 50/50. Switching to empirical priors usually raises accuracy on imbalanced data.`,
+          tone: 'alert'
+        });
+      } else if (testM.acc > 0.9) {
+        setNarrative(narrativeEl, {
+          label: 'Well-separated classes',
+          text: `${classifierType.toUpperCase()} achieves ${(testM.acc*100).toFixed(0)}% test accuracy. When class means are distant and shapes match the model's assumption, this is where discriminant analysis shines.`,
+          tone: 'success'
+        });
+      } else if (testM.acc < 0.7) {
+        setNarrative(narrativeEl, {
+          label: 'Overlapping classes',
+          text: `Test accuracy ${(testM.acc*100).toFixed(0)}%. The class centers are probably too close together (drag them further apart) or the spreads are too large (reduce them).`,
+          tone: 'default'
+        });
+      } else {
+        setNarrative(narrativeEl, {
+          label: 'Status',
+          text: `${classifierType.toUpperCase()}${classifierType === 'lda' ? ', shrinkage=' + shrinkage.toFixed(2) : ''}, priors=${priorMode}. Test accuracy ${(testM.acc*100).toFixed(0)}%.`,
+          tone: 'default'
+        });
+      }
+
+      tracker.update({ trainAcc: trainM.acc, testAcc: testM.acc, gap, f1: testM.f1 });
+    }
+  }
+
+  makeDraggable(cA, svg, (x, y) => {
+    cA.setAttribute('cx', Math.max(70, Math.min(530, x)));
+    cA.setAttribute('cy', Math.max(50, Math.min(370, y)));
+    generate(); resplit(); render();
+  });
+  makeDraggable(cB, svg, (x, y) => {
+    cB.setAttribute('cx', Math.max(70, Math.min(530, x)));
+    cB.setAttribute('cy', Math.max(50, Math.min(370, y)));
+    generate(); resplit(); render();
+  });
+
+  [shrinkSl, testSl].forEach(s => s.oninput = () => { resplit(); render(); });
+  [imbSl, spreadASl, spreadBSl].forEach(s => s.oninput = () => { generate(); resplit(); render(); });
+  wireSegToggle('lda-type', v => { classifierType = v; render(); });
+  wireSegToggle('lda-priors', v => { priorMode = v; render(); });
+
+  document.getElementById('lda-reset').onclick = () => {
+    shrinkSl.value = 0; imbSl.value = 0.5; spreadASl.value = 35; spreadBSl.value = 35; testSl.value = 0.3;
+    classifierType = 'lda'; priorMode = 'empirical';
+    document.querySelectorAll('#lda-type button').forEach(b => b.classList.toggle('active', b.dataset.val === 'lda'));
+    document.querySelectorAll('#lda-priors button').forEach(b => b.classList.toggle('active', b.dataset.val === 'empirical'));
+    cA.setAttribute('cx', 200); cA.setAttribute('cy', 170);
+    cB.setAttribute('cx', 420); cB.setAttribute('cy', 250);
+    tracker.reset();
+    generate(); resplit(); render();
+  };
+  document.getElementById('lda-reshuffle').onclick = () => {
+    seed = (seed * 13 + 7) % 997;
+    generate(); resplit(); render();
+  };
+
+  generate(); resplit(); render();
+})();
+
+</script>
